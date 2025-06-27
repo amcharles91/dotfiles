@@ -1,0 +1,19 @@
+{{ if eq .chezmoi.os "windows" -}}
+# Create PowerShell profile symlink
+$profileDir = Split-Path $PROFILE
+if (!(Test-Path $profileDir)) {
+    New-Item -ItemType Directory -Path $profileDir -Force
+}
+
+$source = "$HOME\.config\powershell\profile.ps1"
+$target = $PROFILE
+
+# Remove existing file if it's not a symlink
+if ((Test-Path $target) -and -not ((Get-Item $target).Attributes -band [IO.FileAttributes]::ReparsePoint)) {
+    Remove-Item $target -Force
+}
+
+# Create symlink
+New-Item -ItemType SymbolicLink -Path $target -Target $source -Force
+Write-Host "PowerShell profile linked to $source"
+{{ end -}}

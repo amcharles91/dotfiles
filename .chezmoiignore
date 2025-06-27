@@ -1,0 +1,9 @@
+{{ if ne .chezmoi.os "windows" }}
+readonly_OneDrive/
+windows-terminal/
+run_once_install-tools.ps1.tmpl
+{{ end }}
+
+{{ if ne .chezmoi.os "linux" }}
+run_once_install-tools.sh.tmpl
+{{ end }}
