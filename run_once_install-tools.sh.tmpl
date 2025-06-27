@@ -4,6 +4,10 @@
 # unless KEEP_CURRENT_SHELL=1). Works with and without sudo.
 set -euo pipefail
 
+# ── Prevent interactive prompts ─────────────────────────────────────────
+export DEBIAN_FRONTEND=noninteractive
+export TZ=UTC
+
 # ── root/sudo detection ─────────────────────────────────────────────────
 if [[ $EUID -eq 0 ]]; then
   SUDO=""                         # already root (Docker, root shell)
@@ -83,14 +87,26 @@ fi
 # ── Fish shell ──────────────────────────────────────────────────────────
 command -v fish &>/dev/null || { echo "⬇️  Installing Fish shell…"; install_pkg fish; }
 
-# ── Nushell ─────────────────────────────────────────────────────────────
+# ── Nushell (download pre-built binary) ─────────────────────────────────
 if ! command -v nu &>/dev/null; then
   echo "⬇️  Installing Nushell…"
-  if command -v cargo &>/dev/null; then
-    cargo install nu
-  else
-    install_pkg nushell || echo "⚠️  Nushell package unavailable; install manually." >&2
-  fi
+  NU_VERSION=$(curl -fsSL https://api.github.com/repos/nushell/nushell/releases/latest \
+               | grep -oP '"tag_name":\s*"\K[0-9.]+' | head -n1)
+  echo "   • Latest version: $NU_VERSION"
+  ARCH=$(uname -m)
+  case "$ARCH" in
+    x86_64)  NU_ARCH="x86_64" ;;
+    aarch64) NU_ARCH="aarch64" ;;
+    *) echo "⚠️  No pre-built Nu for $ARCH" >&2; exit 1 ;;
+  esac
+  
+  tmp=$(mktemp -d)
+  curl -fsSL "https://github.com/nushell/nushell/releases/download/${NU_VERSION}/nu-${NU_VERSION}-${NU_ARCH}-unknown-linux-musl.tar.gz" \
+    | tar -xz -C "$tmp"
+  $SUDO mv "$tmp/nu-${NU_VERSION}-${NU_ARCH}-unknown-linux-musl/nu" /usr/local/bin/
+  $SUDO chmod +x /usr/local/bin/nu
+  rm -rf "$tmp"
+  echo "✅ Nushell ${NU_VERSION} installed to /usr/local/bin/nu"
 fi
 
 # ── Set Nushell as login shell (opt-out with KEEP_CURRENT_SHELL) ────────
