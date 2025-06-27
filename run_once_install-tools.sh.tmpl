@@ -54,33 +54,30 @@ fi
 # ── Starship prompt (download latest pre-built binary) ──────────────────
 if ! command -v starship &>/dev/null; then
   echo "⬇️  Fetching latest Starship release info…"
-  # 1) Discover the newest tag from GitHub's API
-  STAR_VERSION="$(
-    curl -fsSL https://api.github.com/repos/starship/starship/releases/latest \
-      | grep -oP '"tag_name":\s*"\Kv[0-9.]+' \
-      | head -n1
-  )"
-  echo "   • Latest version: $STAR_VERSION"
-  # 2) Pick the correct asset name for this OS/arch
+  # 1) Latest tag (e.g. v1.23.0)
+  STAR_TAG=$(curl -fsSL https://api.github.com/repos/starship/starship/releases/latest \
+               | grep -oP '"tag_name":\s*"\Kv[0-9.]+' | head -n1)
+  echo "   • Latest version: $STAR_TAG"
+  # 2) Pick correct asset name (no version in filename)
   OS=$(uname -s | tr '[:upper:]' '[:lower:]')
   ARCH=$(uname -m)
   case "${OS}_${ARCH}" in
-    linux_x86_64)   ASSET="starship-${STAR_VERSION}-x86_64-unknown-linux-musl.tar.gz" ;;
-    linux_aarch64)  ASSET="starship-${STAR_VERSION}-aarch64-unknown-linux-musl.tar.gz" ;;
-    darwin_x86_64)  ASSET="starship-${STAR_VERSION}-x86_64-apple-darwin.tar.gz"       ;;
-    darwin_arm64)   ASSET="starship-${STAR_VERSION}-aarch64-apple-darwin.tar.gz"      ;;
+    linux_x86_64)   ASSET="starship-x86_64-unknown-linux-musl.tar.gz" ;;
+    linux_aarch64)  ASSET="starship-aarch64-unknown-linux-musl.tar.gz" ;;
+    darwin_x86_64)  ASSET="starship-x86_64-apple-darwin.tar.gz"       ;;
+    darwin_arm64)   ASSET="starship-aarch64-apple-darwin.tar.gz"      ;;
     *)
-      echo "⚠️  No pre-built Starship binary for ${OS}_${ARCH}" >&2; exit 1 ;;
+      echo "⚠️  No pre-built Starship for ${OS}_${ARCH}" >&2; exit 1 ;;
   esac
   echo "   • Downloading asset: $ASSET"
-  # 3) Download, extract, and install
+  # 3) Download, extract, install
   tmp=$(mktemp -d)
-  curl -fsSL "https://github.com/starship/starship/releases/download/${STAR_VERSION}/${ASSET}" \
+  curl -fsSL "https://github.com/starship/starship/releases/download/${STAR_TAG}/${ASSET}" \
     | tar -xz -C "$tmp"
   $SUDO mv "$tmp/starship" /usr/local/bin/
   $SUDO chmod +x /usr/local/bin/starship
   rm -rf "$tmp"
-  echo "✅ Starship ${STAR_VERSION} installed to /usr/local/bin/starship"
+  echo "✅ Starship ${STAR_TAG} installed to /usr/local/bin/starship"
 fi
 
 # ── Fish shell ──────────────────────────────────────────────────────────
