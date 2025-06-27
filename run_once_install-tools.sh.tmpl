@@ -29,6 +29,17 @@ install_pkg() {
 for t in curl git unzip fc-list; do command -v "$t" &>/dev/null || NEED_BASE=1; done
 [[ ${NEED_BASE:-0} == 1 ]] && { echo "🔧  Installing base tools…"; install_pkg curl git ca-certificates unzip fontconfig; }
 
+# ── build tools (for Cargo) ─────────────────────────────────────────────
+if ! command -v cc &>/dev/null; then
+  echo "🔧  Installing build tools for Cargo…"
+  case 1 in
+    $(command -v apt-get >/dev/null 2>&1 && echo 1)) install_pkg build-essential ;;  
+    $(command -v dnf     >/dev/null 2>&1 && echo 1)) install_pkg gcc gcc-c++ make ;;
+    $(command -v pacman  >/dev/null 2>&1 && echo 1)) install_pkg base-devel ;;
+    $(command -v zypper  >/dev/null 2>&1 && echo 1)) install_pkg gcc gcc-c++ make ;;
+  esac
+fi
+
 # ── JetBrains Mono font (prefer Nerd) ───────────────────────────────────
 FONT_NAME="JetBrainsMono"
 NERD_PATTERN="$FONT_NAME.*Nerd Font"
