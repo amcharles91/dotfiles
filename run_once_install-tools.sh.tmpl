@@ -114,7 +114,7 @@ if [[ "${KEEP_CURRENT_SHELL:-0}" != 1 ]] && command -v nu &>/dev/null \
    && [[ "$SHELL" != "$(command -v nu)" ]]; then
   NU_PATH=$(command -v nu)
   grep -q "$NU_PATH" /etc/shells || echo "$NU_PATH" | $SUDO tee -a /etc/shells >/dev/null
-  $SUDO chsh -s "$NU_PATH"
+  $SUDO chsh -s "$NU_PATH" "$USER"
   echo "⚙️  Nushell set as default. Log out & back in to activate."
 fi
 {{ end -}}
@@ -165,7 +165,7 @@ if [[ "${KEEP_CURRENT_SHELL:-0}" != 1 ]] && command -v nu &>/dev/null \
    && [[ "$SHELL" != "$(command -v nu)" ]]; then
   NU_PATH=$(command -v nu)
   grep -q "$NU_PATH" /etc/shells || echo "$NU_PATH" | $SUDO tee -a /etc/shells >/dev/null
-  $SUDO chsh -s "$NU_PATH"
+  $SUDO chsh -s "$NU_PATH" "$USER"
   echo "⚙️  Nushell set as default. Log out & back in to activate."
 fi
 {{ end -}}
