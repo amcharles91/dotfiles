@@ -1,0 +1,34 @@
+{{ if eq .chezmoi.os "windows" -}}
+# Install JetBrainsMono Nerd Font on Windows
+
+# Check if font already installed
+$fontInstalled = (Get-ChildItem -Path "$env:LOCALAPPDATA\Microsoft\Windows\Fonts\JetBrainsMonoNerdFont-*.ttf" -ErrorAction SilentlyContinue) -or `
+                (Get-ChildItem -Path "C:\Windows\Fonts\JetBrainsMonoNerdFont-*.ttf" -ErrorAction SilentlyContinue)
+
+if (-not $fontInstalled) {
+    Write-Host "Installing JetBrainsMono Nerd Font..." -ForegroundColor Yellow
+    
+    if (Get-Command winget -ErrorAction SilentlyContinue) {
+        winget install --id=DEVCOM.JetBrainsMonoNerdFont --silent --accept-package-agreements --accept-source-agreements
+    } else {
+        Write-Host "Winget not found. Please install manually from: https://github.com/ryanoasis/nerd-fonts" -ForegroundColor Red
+    }
+} else {
+    Write-Host "JetBrainsMono Nerd Font already installed" -ForegroundColor Green
+}
+
+# Install Starship if missing
+if (-not (Get-Command starship -ErrorAction SilentlyContinue)) {
+    Write-Host "Installing Starship..." -ForegroundColor Yellow
+    winget install --id=Starship.Starship --silent --accept-package-agreements --accept-source-agreements
+}
+
+# Install Nu shell if missing
+if (-not (Get-Command nu -ErrorAction SilentlyContinue)) {
+    Write-Host "Installing Nu shell..." -ForegroundColor Yellow
+    winget install --id=Nushell.Nushell --silent --accept-package-agreements --accept-source-agreements
+}
+
+# Note: Fish shell is not available on Windows
+Write-Host "Note: Fish shell is not available on Windows. Use WSL for Fish shell." -ForegroundColor Cyan
+{{ end -}}

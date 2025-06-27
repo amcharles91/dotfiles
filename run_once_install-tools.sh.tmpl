@@ -1,0 +1,174 @@
+{{ if eq .chezmoi.os "linux" -}}
+#!/bin/bash
+# Install JetBrainsMono Nerd Font on Linux
+
+set -e
+
+FONT_NAME="JetBrainsMono"
+FONT_DIR="$HOME/.local/share/fonts"
+FONT_URL="https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/JetBrainsMono.zip"
+
+# Check if font already installed
+if fc-list | grep -qi "$FONT_NAME.*Nerd Font"; then
+    echo "JetBrainsMono Nerd Font already installed"
+else
+    echo "Installing JetBrainsMono Nerd Font..."
+    
+    # Try package managers first
+    if command -v apt-get &> /dev/null; then
+        # Debian/Ubuntu
+        sudo apt-get update && sudo apt-get install -y fonts-jetbrains-mono || :
+    elif command -v dnf &> /dev/null; then
+        # Fedora
+        sudo dnf install -y jetbrains-mono-fonts || :
+    elif command -v pacman &> /dev/null; then
+        # Arch
+        sudo pacman -S --noconfirm ttf-jetbrains-mono-nerd || :
+    elif command -v zypper &> /dev/null; then
+        # openSUSE
+        sudo zypper install -y jetbrains-mono-fonts || :
+    fi
+    
+    # Check again, install manually if package managers failed
+    if ! fc-list | grep -qi "$FONT_NAME.*Nerd Font"; then
+        echo "Package manager install failed, downloading manually..."
+        
+        mkdir -p "$FONT_DIR"
+        temp_dir=$(mktemp -d)
+        trap "rm -rf $temp_dir" EXIT
+        
+        curl -fLo "$temp_dir/JetBrainsMono.zip" "$FONT_URL"
+        unzip -q "$temp_dir/JetBrainsMono.zip" -d "$temp_dir"
+        
+        # Copy only .ttf files
+        find "$temp_dir" -name "*.ttf" -exec cp {} "$FONT_DIR/" \;
+        
+        # Update font cache
+        fc-cache -fv
+    fi
+    
+    echo "JetBrainsMono Nerd Font installed!"
+fi
+
+# Install Starship if missing
+if ! command -v starship &> /dev/null; then
+    echo "Installing Starship..."
+    curl -sS https://starship.rs/install.sh | sh -s -- -y
+fi
+
+# Install Fish shell if missing
+if ! command -v fish &> /dev/null; then
+    echo "Installing Fish shell..."
+    if command -v apt-get &> /dev/null; then
+        sudo apt-get install -y fish
+    elif command -v dnf &> /dev/null; then
+        sudo dnf install -y fish
+    elif command -v pacman &> /dev/null; then
+        sudo pacman -S --noconfirm fish
+    elif command -v zypper &> /dev/null; then
+        sudo zypper install -y fish
+    fi
+fi
+
+# Install Nu shell if missing
+if ! command -v nu &> /dev/null; then
+    echo "Installing Nu shell..."
+    if command -v cargo &> /dev/null; then
+        cargo install nu
+    else
+        # Download prebuilt binary
+        NU_VERSION="0.91.0"
+        ARCH=$(uname -m)
+        case "$ARCH" in
+            x86_64) ARCH="x86_64" ;;
+            aarch64) ARCH="aarch64" ;;
+            *) echo "Unsupported architecture: $ARCH"; exit 1 ;;
+        esac
+        
+        curl -fLo /tmp/nu.tar.gz "https://github.com/nushell/nushell/releases/download/$NU_VERSION/nu-$NU_VERSION-$ARCH-unknown-linux-musl.tar.gz"
+        sudo tar -xzf /tmp/nu.tar.gz -C /usr/local/bin --strip-components=1 nu-$NU_VERSION-$ARCH-unknown-linux-musl/nu
+        rm /tmp/nu.tar.gz
+    fi
+fi
+
+# Set Nu as default shell
+if command -v nu &> /dev/null && [ "$SHELL" != "$(which nu)" ]; then
+    echo "Setting Nu as default shell..."
+    NU_PATH=$(which nu)
+    
+    # Add to shells if not already there
+    if ! grep -q "$NU_PATH" /etc/shells; then
+        echo "$NU_PATH" | sudo tee -a /etc/shells
+    fi
+    
+    # Change default shell
+    chsh -s "$NU_PATH"
+    echo "Default shell set to Nu. Please log out and back in for changes to take effect."
+fi
+{{ end -}}
+
+{{ if eq .chezmoi.os "darwin" -}}
+#!/bin/bash
+# Install JetBrainsMono Nerd Font on macOS
+
+set -e
+
+FONT_NAME="JetBrainsMono"
+FONT_DIR="$HOME/Library/Fonts"
+FONT_URL="https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/JetBrainsMono.zip"
+
+# Check if font already installed
+if ls "$FONT_DIR"/*JetBrainsMono*Nerd*.ttf &>/dev/null 2>&1; then
+    echo "JetBrainsMono Nerd Font already installed"
+else
+    echo "Installing JetBrainsMono Nerd Font..."
+    
+    # Try Homebrew first
+    if command -v brew &> /dev/null; then
+        brew tap homebrew/cask-fonts
+        brew install --cask font-jetbrains-mono-nerd-font
+    else
+        # Manual installation
+        temp_dir=$(mktemp -d)
+        trap "rm -rf $temp_dir" EXIT
+        
+        curl -fLo "$temp_dir/JetBrainsMono.zip" "$FONT_URL"
+        unzip -q "$temp_dir/JetBrainsMono.zip" -d "$temp_dir"
+        
+        # Copy fonts
+        find "$temp_dir" -name "*.ttf" -exec cp {} "$FONT_DIR/" \;
+        
+        echo "JetBrainsMono Nerd Font installed!"
+    fi
+fi
+
+# Install Starship if missing
+if ! command -v starship &> /dev/null; then
+    echo "Installing Starship..."
+    if command -v brew &> /dev/null; then
+        brew install starship
+    else
+        curl -sS https://starship.rs/install.sh | sh -s -- -y
+    fi
+fi
+
+# Install Fish shell if missing
+if ! command -v fish &> /dev/null; then
+    echo "Installing Fish shell..."
+    if command -v brew &> /dev/null; then
+        brew install fish
+    else
+        echo "Please install Fish manually or install Homebrew first"
+    fi
+fi
+
+# Install Nu shell if missing
+if ! command -v nu &> /dev/null; then
+    echo "Installing Nu shell..."
+    if command -v brew &> /dev/null; then
+        brew install nushell
+    else
+        echo "Please install Nu manually or install Homebrew first"
+    fi
+fi
+{{ end -}}
