@@ -26,8 +26,8 @@ install_pkg() {
 }
 
 # ── base tools ──────────────────────────────────────────────────────────
-for t in curl git unzip; do command -v "$t" &>/dev/null || NEED_BASE=1; done
-[[ ${NEED_BASE:-0} == 1 ]] && { echo "🔧  Installing base tools…"; install_pkg curl git ca-certificates unzip; }
+for t in curl git unzip fc-list; do command -v "$t" &>/dev/null || NEED_BASE=1; done
+[[ ${NEED_BASE:-0} == 1 ]] && { echo "🔧  Installing base tools…"; install_pkg curl git ca-certificates unzip fontconfig; }
 
 # ── JetBrains Mono font (prefer Nerd) ───────────────────────────────────
 FONT_NAME="JetBrainsMono"
@@ -51,16 +51,20 @@ else
   echo "✅ JetBrains Mono Nerd Font already present"
 fi
 
-# ── Starship prompt ─────────────────────────────────────────────────────
+# ── Starship prompt (Cargo-only) ────────────────────────────────────────
 if ! command -v starship &>/dev/null; then
-  echo "⬇️  Installing Starship…"
-  if   command -v apt-get &>/dev/null; then install_pkg starship
-  elif command -v dnf     &>/dev/null; then install_pkg starship
-  elif command -v pacman  &>/dev/null; then install_pkg starship
-  elif command -v zypper  &>/dev/null; then install_pkg starship
-  else
-    curl -sSL https://starship.rs/install.sh | sh -s -- -y
+  echo "⬇️  Installing Starship via Cargo…"
+  # 1) ensure rustup + cargo
+  if ! command -v cargo &>/dev/null; then
+    echo "   • Rust toolchain missing, installing rustup…"
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
+      | sh -s -- -y --profile minimal
+    export PATH="$HOME/.cargo/bin:$PATH"
   fi
+  # 2) install (or upgrade) starship
+  cargo install starship --locked --force
+  # 3) make sure the current shell sees it
+  export PATH="$HOME/.cargo/bin:$PATH"
 fi
 
 # ── Fish shell ──────────────────────────────────────────────────────────
