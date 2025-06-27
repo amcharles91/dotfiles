@@ -29,17 +29,6 @@ install_pkg() {
 for t in curl git unzip fc-list; do command -v "$t" &>/dev/null || NEED_BASE=1; done
 [[ ${NEED_BASE:-0} == 1 ]] && { echo "🔧  Installing base tools…"; install_pkg curl git ca-certificates unzip fontconfig; }
 
-# ── build tools (for Cargo) ─────────────────────────────────────────────
-if ! command -v cc &>/dev/null; then
-  echo "🔧  Installing build tools for Cargo…"
-  case 1 in
-    $(command -v apt-get >/dev/null 2>&1 && echo 1)) install_pkg build-essential ;;  
-    $(command -v dnf     >/dev/null 2>&1 && echo 1)) install_pkg gcc gcc-c++ make ;;
-    $(command -v pacman  >/dev/null 2>&1 && echo 1)) install_pkg base-devel ;;
-    $(command -v zypper  >/dev/null 2>&1 && echo 1)) install_pkg gcc gcc-c++ make ;;
-  esac
-fi
-
 # ── JetBrains Mono font (prefer Nerd) ───────────────────────────────────
 FONT_NAME="JetBrainsMono"
 NERD_PATTERN="$FONT_NAME.*Nerd Font"
@@ -62,20 +51,36 @@ else
   echo "✅ JetBrains Mono Nerd Font already present"
 fi
 
-# ── Starship prompt (Cargo-only) ────────────────────────────────────────
+# ── Starship prompt (download latest pre-built binary) ──────────────────
 if ! command -v starship &>/dev/null; then
-  echo "⬇️  Installing Starship via Cargo…"
-  # 1) ensure rustup + cargo
-  if ! command -v cargo &>/dev/null; then
-    echo "   • Rust toolchain missing, installing rustup…"
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
-      | sh -s -- -y --profile minimal
-    export PATH="$HOME/.cargo/bin:$PATH"
-  fi
-  # 2) install (or upgrade) starship
-  cargo install starship --locked --force
-  # 3) make sure the current shell sees it
-  export PATH="$HOME/.cargo/bin:$PATH"
+  echo "⬇️  Fetching latest Starship release info…"
+  # 1) Discover the newest tag from GitHub's API
+  STAR_VERSION="$(
+    curl -fsSL https://api.github.com/repos/starship/starship/releases/latest \
+      | grep -oP '"tag_name":\s*"\Kv[0-9.]+' \
+      | head -n1
+  )"
+  echo "   • Latest version: $STAR_VERSION"
+  # 2) Pick the correct asset name for this OS/arch
+  OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+  ARCH=$(uname -m)
+  case "${OS}_${ARCH}" in
+    linux_x86_64)   ASSET="starship-${STAR_VERSION}-x86_64-unknown-linux-musl.tar.gz" ;;
+    linux_aarch64)  ASSET="starship-${STAR_VERSION}-aarch64-unknown-linux-musl.tar.gz" ;;
+    darwin_x86_64)  ASSET="starship-${STAR_VERSION}-x86_64-apple-darwin.tar.gz"       ;;
+    darwin_arm64)   ASSET="starship-${STAR_VERSION}-aarch64-apple-darwin.tar.gz"      ;;
+    *)
+      echo "⚠️  No pre-built Starship binary for ${OS}_${ARCH}" >&2; exit 1 ;;
+  esac
+  echo "   • Downloading asset: $ASSET"
+  # 3) Download, extract, and install
+  tmp=$(mktemp -d)
+  curl -fsSL "https://github.com/starship/starship/releases/download/${STAR_VERSION}/${ASSET}" \
+    | tar -xz -C "$tmp"
+  $SUDO mv "$tmp/starship" /usr/local/bin/
+  $SUDO chmod +x /usr/local/bin/starship
+  rm -rf "$tmp"
+  echo "✅ Starship ${STAR_VERSION} installed to /usr/local/bin/starship"
 fi
 
 # ── Fish shell ──────────────────────────────────────────────────────────
