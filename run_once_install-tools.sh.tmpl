@@ -1,60 +1,60 @@
 {{ if eq .chezmoi.os "linux" -}}
 #!/usr/bin/env bash
 # Install JetBrains Mono (prefers Nerd-patched), Starship, Fish & Nushell
-# ⓘ  Nu becomes the login shell unless KEEP_CURRENT_SHELL=1 is exported.
+# ⓘ  Nushell becomes the login shell unless KEEP_CURRENT_SHELL=1 is exported.
 set -euo pipefail
 
-# ── cross-distro pkg helper ──────────────────────────────────────────────
+# ── cross-distro package helper ─────────────────────────────────────────
 install_pkg() {
   if command -v apt-get &>/dev/null; then
     [[ -z "${APT_UPDATED:-}" ]] && { sudo apt-get update -qq; APT_UPDATED=1; }
     sudo apt-get install -y --no-install-recommends "$@"
-  elif command -v dnf &>/dev/null; then
-    sudo dnf install -y "$@"
-  elif command -v pacman &>/dev/null; then
-    sudo pacman -S --noconfirm "$@"
-  elif command -v zypper &>/dev/null; then
-    sudo zypper install -y "$@"
+  elif command -v dnf   &>/dev/null; then sudo dnf   install -y "$@"
+  elif command -v pacman&>/dev/null; then sudo pacman -S --noconfirm "$@"
+  elif command -v zypper&>/dev/null; then sudo zypper install -y "$@"
   else
     echo "❌  No supported package manager found." >&2; exit 1
   fi
 }
 
-# ── essential tools (curl git ca-certs unzip) ───────────────────────────
-need_tools=false
-for t in curl git unzip; do
-  command -v "$t" &>/dev/null || need_tools=true
-done
-$need_tools && { echo "🔧  Installing base tools…"; install_pkg curl git ca-certificates unzip; }
+# ── essential tools ────────────────────────────────────────────────────
+need_base=false
+for t in curl git unzip; do command -v "$t" &>/dev/null || need_base=true; done
+$need_base && { echo "🔧  Installing base tools…"; install_pkg curl git ca-certificates unzip; }
 
 # ── JetBrains Mono font (prefer Nerd) ───────────────────────────────────
 FONT_NAME="JetBrainsMono"
 NERD_PATTERN="$FONT_NAME.*Nerd Font"
 
 if ! fc-list | grep -qi "$NERD_PATTERN"; then
-  echo "⬇️  Installing JetBrains Mono via package manager…"
+  echo "⬇️  Installing JetBrains Mono font from package manager…"
   case 1 in
     $(command -v pacman >/dev/null 2>&1 && echo 1)) install_pkg ttf-jetbrains-mono-nerd ;;
-    $(command -v apt-get >/dev/null 2>&1 && echo 1)) install_pkg fonts-jetbrains-mono ;;
-    $(command -v dnf >/dev/null 2>&1 && echo 1))     install_pkg jetbrains-mono-fonts ;;
-    $(command -v zypper >/dev/null 2>&1 && echo 1))  install_pkg jetbrains-mono-fonts ;;
+    $(command -v apt-get >/dev/null 2>&1 && echo 1)) install_pkg fonts-jetbrains-mono   ;;
+    $(command -v dnf     >/dev/null 2>&1 && echo 1)) install_pkg jetbrains-mono-fonts  ;;
+    $(command -v zypper  >/dev/null 2>&1 && echo 1)) install_pkg jetbrains-mono-fonts  ;;
   esac
 
   if fc-list | grep -qi "$NERD_PATTERN"; then
     echo "✅ JetBrains Mono Nerd Font installed!"
   else
-    echo "⚠️  Only the regular JetBrains Mono was available in repos."
-    echo "    Consider a manual Nerd Font install if you need power-line icons."
+    echo "⚠️  Repo only had regular JetBrains Mono. For power-line icons, install the Nerd-patched font manually."
   fi
 else
   echo "✅ JetBrains Mono Nerd Font already present"
 fi
 
 # ── Starship prompt ─────────────────────────────────────────────────────
-command -v starship &>/dev/null || {
+if ! command -v starship &>/dev/null; then
   echo "⬇️  Installing Starship…"
-  curl -sS https://starship.rs/install.sh | sh -s -- -y
-}
+  if   command -v apt-get &>/dev/null; then install_pkg starship            # Debian/Ubuntu
+  elif command -v dnf     &>/dev/null; then install_pkg starship            # Fedora/RHEL
+  elif command -v pacman  &>/dev/null; then install_pkg starship            # Arch
+  elif command -v zypper  &>/dev/null; then install_pkg starship            # openSUSE
+  else
+    curl -sSL https://starship.rs/install.sh | sh -s -- -y                  # fallback
+  fi
+fi
 
 # ── Fish shell ──────────────────────────────────────────────────────────
 command -v fish &>/dev/null || { echo "⬇️  Installing Fish shell…"; install_pkg fish; }
@@ -69,7 +69,7 @@ if ! command -v nu &>/dev/null; then
   fi
 fi
 
-# ── Make Nushell the login shell unless opted out ───────────────────────
+# ── Make Nushell the login shell (opt-out with KEEP_CURRENT_SHELL) ──────
 if [[ "${KEEP_CURRENT_SHELL:-0}" != 1 ]] && command -v nu &>/dev/null \
    && [[ "$SHELL" != "$(command -v nu)" ]]; then
   NU_PATH=$(command -v nu)
@@ -82,40 +82,45 @@ fi
 {{ if eq .chezmoi.os "darwin" -}}
 #!/usr/bin/env bash
 # Install JetBrains Mono Nerd Font, Starship, Fish & Nushell on macOS
-# ⓘ  Nu becomes login shell unless KEEP_CURRENT_SHELL=1.
+# ⓘ  Nushell becomes login shell unless KEEP_CURRENT_SHELL=1 is exported.
 set -euo pipefail
 
-# Nerd-patched font via Homebrew
+# ── JetBrains Mono Nerd Font (Homebrew) ─────────────────────────────────
 if ! ls "$HOME/Library/Fonts"/*JetBrainsMono*Nerd*.ttf &>/dev/null 2>&1; then
   echo "⬇️  Installing JetBrains Mono Nerd Font…"
-  command -v brew &>/dev/null && {
+  if command -v brew &>/dev/null; then
     brew tap homebrew/cask-fonts
     brew install --cask font-jetbrains-mono-nerd-font
-  } || echo "⚠️  Install Homebrew or the font manually." >&2
+  else
+    echo "⚠️  Homebrew not found. Install the font manually." >&2
+  fi
 fi
 
-# Starship
-command -v starship &>/dev/null || {
+# ── Starship prompt ─────────────────────────────────────────────────────
+if ! command -v starship &>/dev/null; then
   echo "⬇️  Installing Starship…"
-  command -v brew &>/dev/null && brew install starship \
-    || curl -sS https://starship.rs/install.sh | sh -s -- -y
-}
+  if command -v brew &>/dev/null; then
+    brew install starship
+  else
+    curl -sSL https://starship.rs/install.sh | sh -s -- -y
+  fi
+fi
 
-# Fish
-command -v fish &>/dev/null || {
+# ── Fish shell ──────────────────────────────────────────────────────────
+if ! command -v fish &>/dev/null; then
   echo "⬇️  Installing Fish shell…"
   command -v brew &>/dev/null && brew install fish \
     || echo "⚠️  Install Homebrew or Fish manually." >&2
-}
+fi
 
-# Nushell
-command -v nu &>/dev/null || {
+# ── Nushell ─────────────────────────────────────────────────────────────
+if ! command -v nu &>/dev/null; then
   echo "⬇️  Installing Nushell…"
   command -v brew &>/dev/null && brew install nushell \
     || echo "⚠️  Install Homebrew or Nushell manually." >&2
-}
+fi
 
-# Make Nushell the login shell unless opted out
+# ── Make Nushell the login shell (opt-out with KEEP_CURRENT_SHELL) ──────
 if [[ "${KEEP_CURRENT_SHELL:-0}" != 1 ]] && command -v nu &>/dev/null \
    && [[ "$SHELL" != "$(command -v nu)" ]]; then
   NU_PATH=$(command -v nu)
