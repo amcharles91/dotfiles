@@ -11,6 +11,16 @@ run_after_setup-powershell.ps1.tmpl
 .chezmoiscripts/run_before_01-install-tools.sh.tmpl
 {{ end }}
 
+# Repository documentation - don't copy to home directory
+README.md
+LICENSE
+*.md
+
+# Git repository files - don't copy to home directory
+.git/
+.gitignore
+.github/
+
 # Ignore old/deprecated files
 *.old
 *.deleted
