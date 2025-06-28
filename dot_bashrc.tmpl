@@ -1,0 +1,66 @@
+{{- if ne .chezmoi.os "windows" -}}
+#!/bin/bash
+# ~/.bashrc - Bash configuration
+
+# Source global definitions
+if [ -f /etc/bashrc ]; then
+    . /etc/bashrc
+fi
+
+# User specific environment
+if ! [[ "$PATH" =~ "$HOME/.local/bin:$HOME/bin:" ]]; then
+    PATH="$HOME/.local/bin:$HOME/bin:$PATH"
+fi
+export PATH
+
+# Initialize Starship prompt
+if command -v starship &> /dev/null; then
+    eval "$(starship init bash)"
+else
+    echo "Warning: Starship not found. Run 'chezmoi apply' to install."
+fi
+
+# Common aliases
+alias ll='ls -alF'
+alias la='ls -A'
+alias l='ls -CF'
+alias ..='cd ..'
+alias ...='cd ../..'
+alias grep='grep --color=auto'
+
+# Git aliases
+alias gs='git status'
+alias ga='git add'
+alias gc='git commit'
+alias gp='git push'
+alias gl='git log --oneline'
+alias gd='git diff'
+
+# Safety aliases
+alias rm='rm -i'
+alias cp='cp -i'
+alias mv='mv -i'
+
+# WSL-specific settings
+{{- if .isWSL }}
+# WSL detected - add Windows interop
+export BROWSER="{{ .wsl.browser }}"
+alias open="{{ .wsl.browser }}"
+alias explorer="explorer.exe"
+
+# Fix WSL2 network issues
+if [[ -z "$SSH_AUTH_SOCK" ]]; then
+    export SSH_AUTH_SOCK="$HOME/.ssh/agent.sock"
+fi
+{{- end }}
+
+# Custom functions
+mkcd() {
+    mkdir -p "$1" && cd "$1"
+}
+
+# Source local overrides if they exist
+if [ -f "$HOME/.bashrc.local" ]; then
+    . "$HOME/.bashrc.local"
+fi
+{{- end -}}

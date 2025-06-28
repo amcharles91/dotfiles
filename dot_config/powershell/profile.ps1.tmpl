@@ -1,4 +1,106 @@
-{{ if eq .chezmoi.os "windows" -}}
-$ENV:STARSHIP_CONFIG = "$HOME\.config\starship-powershell.toml"
-Invoke-Expression (&starship init powershell)
-{{ end -}}
+{{- if or (eq .chezmoi.os "windows") (lookPath "pwsh") -}}
+# PowerShell Profile
+# ~/.config/powershell/profile.ps1 (Linux/macOS) or ~\Documents\PowerShell\profile.ps1 (Windows)
+
+# Set UTF-8 encoding
+[Console]::OutputEncoding = [Text.UTF8Encoding]::UTF8
+$PSDefaultParameterValues['*:Encoding'] = 'utf8'
+
+# Enhanced error handling
+$ErrorActionPreference = 'Continue'
+$ErrorView = 'ConciseView'
+
+# Path configuration
+{{- if eq .chezmoi.os "windows" }}
+$env:PATH = "$HOME\.local\bin;$HOME\bin;$env:PATH"
+{{- else }}
+$env:PATH = "$HOME/.local/bin:$HOME/bin:$env:PATH"
+{{- end }}
+
+# Initialize Starship prompt
+if (Get-Command starship -ErrorAction SilentlyContinue) {
+    Invoke-Expression (&starship init powershell)
+} else {
+    Write-Warning "Starship not found. Run 'chezmoi apply' to install."
+}
+
+# PSReadLine configuration
+if (Get-Module -ListAvailable -Name PSReadLine) {
+    Set-PSReadLineOption -EditMode Emacs
+    Set-PSReadLineOption -HistorySearchCursorMovesToEnd
+    Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete
+    Set-PSReadLineKeyHandler -Key UpArrow -Function HistorySearchBackward
+    Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward
+}
+
+# Common aliases
+Set-Alias ll Get-ChildItem
+Set-Alias la 'Get-ChildItem -Force'
+Set-Alias which Get-Command
+Set-Alias grep Select-String
+
+# Git aliases
+function Get-GitStatus { git status }
+Set-Alias gs Get-GitStatus
+
+function Invoke-GitAdd { git add $args }
+Set-Alias ga Invoke-GitAdd
+
+function Invoke-GitCommit { git commit $args }
+Set-Alias gc Invoke-GitCommit
+
+function Invoke-GitPush { git push $args }
+Set-Alias gp Invoke-GitPush
+
+function Get-GitLog { git log --oneline $args }
+Set-Alias gl Get-GitLog
+
+function Get-GitDiff { git diff $args }
+Set-Alias gd Get-GitDiff
+
+# Utility functions
+function mkcd {
+    param([string]$Path)
+    New-Item -ItemType Directory -Path $Path -Force | Out-Null
+    Set-Location -Path $Path
+}
+
+function touch {
+    param([string]$Path)
+    if (Test-Path $Path) {
+        (Get-Item $Path).LastWriteTime = Get-Date
+    } else {
+        New-Item -ItemType File -Path $Path
+    }
+}
+
+# Platform specific settings
+{{- if eq .chezmoi.os "windows" }}
+# Windows specific aliases
+function Open-Explorer { explorer.exe $args }
+Set-Alias open Open-Explorer
+
+# Chocolatey profile
+$ChocolateyProfile = "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
+if (Test-Path($ChocolateyProfile)) {
+    Import-Module "$ChocolateyProfile"
+}
+{{- else }}
+# Unix-like aliases for PowerShell on Linux/macOS
+Set-Alias open xdg-open -ErrorAction SilentlyContinue
+{{- end }}
+
+# WSL specific settings
+{{- if .isWSL }}
+# WSL detected
+$env:BROWSER = "{{ .wsl.browser }}"
+function Open-InWindows { wslview $args }
+Set-Alias open Open-InWindows
+{{- end }}
+
+# Load local profile if it exists
+$LocalProfile = Join-Path (Split-Path $PROFILE) "profile.local.ps1"
+if (Test-Path $LocalProfile) {
+    . $LocalProfile
+}
+{{- end -}}

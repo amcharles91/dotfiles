@@ -1,25 +1,28 @@
-# config.nu
-#
-# Installed by:
-# version = "0.105.1"
-#
-# This file is used to override default Nushell settings, define
-# (or import) custom commands, or run any other startup tasks.
-# See https://www.nushell.sh/book/configuration.html
-#
-# This file is loaded after env.nu and before login.nu
-#
-# You can open this file in your default editor using:
-# config nu
-#
-# See `help config nu` for more options
-#
-# You can remove these comments if you want or leave
-# them for future reference.
+# Nushell Configuration File
+# ~/.config/nushell/config.nu
+
+# Version check for compatibility
+let nu_version = (version | get version)
+
+# Basic configuration
+$env.config = {
+    show_banner: false
+    history: {
+        max_size: 10000
+        sync_on_enter: true
+        file_format: "plaintext"
+    }
+}
 
 # Initialize Starship prompt
-mkdir ($nu.data-dir | path join "vendor/autoload")
-if (which starship | is-not-empty) {
-    starship init nu | save -f ($nu.data-dir | path join "vendor/autoload/starship.nu")
+# For Nushell 0.96+, source from the vendor autoload directory
+# Note: You need to run this once after installation:
+# mkdir ($nu.data-dir | path join "vendor/autoload")
+# starship init nu | save -f ($nu.data-dir | path join "vendor/autoload/starship.nu")
+if ((which starship | length) > 0) {
     source ($nu.data-dir | path join "vendor/autoload/starship.nu")
 }
+
+# Optional: Add any custom commands or aliases here
+# alias ll = ls -la
+# alias gs = git status

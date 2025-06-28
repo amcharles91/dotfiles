@@ -5,6 +5,10 @@ format = """
 [╰─▶](#40FFE9)
 """
 
+# Disable line breaks (looks better on all shells, especially PowerShell)
+[line_break]
+disabled = true
+
 [username]
 format = "[$user](bold #F39C12)"
 show_always = true

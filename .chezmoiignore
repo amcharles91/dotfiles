@@ -1,27 +1,83 @@
-{{ if ne .chezmoi.os "windows" }}
-# Ignore Windows-specific files on non-Windows systems
-readonly_OneDrive/
-windows-terminal/
-.chezmoiscripts/run_before_01-install-tools.ps1.tmpl
-run_after_setup-powershell.ps1.tmpl
-{{ end }}
-
-{{ if eq .chezmoi.os "windows" }}
-# Ignore Unix shell scripts on Windows
-.chezmoiscripts/run_before_01-install-tools.sh.tmpl
-{{ end }}
-
-# Repository documentation - don't copy to home directory
+# Version control
 README.md
 LICENSE
-*.md
-
-# Git repository files - don't copy to home directory
 .git/
-.gitignore
 .github/
 
-# Ignore old/deprecated files
-*.old
-*.deleted
-starship-theme-manager.nu*
+# Security - SSH and keys
+.ssh/id_*
+.ssh/*_rsa
+.ssh/*_dsa
+.ssh/*_ecdsa
+.ssh/*_ed25519
+.ssh/known_hosts
+.ssh/authorized_keys
+
+# Security - GPG
+.gnupg/
+
+# Security - Cloud credentials
+.aws/credentials
+.aws/config
+.azure/
+.gcloud/
+.config/gcloud/
+.kube/config
+.kube/cache/
+.docker/config.json
+
+# Security - Tokens and secrets
+.env
+.env.*
+.netrc
+.npmrc
+.pypirc
+.cargo/credentials
+.config/hub
+.config/gh/hosts.yml
+
+# Security - Password managers
+.password-store/
+.config/1Password/
+.config/Bitwarden/
+.local/share/keyrings/
+
+# Local data
+.cache/
+.local/share/
+.local/state/
+.config/chezmoi/chezmoi.toml
+.claude/
+
+# OS-specific exclusions
+{{ if eq .chezmoi.os "windows" }}
+# Windows doesn't need these Unix shell configs
+dot_bashrc.tmpl
+dot_zshrc.tmpl
+dot_config/fish/
+{{ else if eq .chezmoi.os "darwin" }}
+# macOS specific
+{{ else }}
+# Linux specific
+{{ end }}
+
+# WSL-specific exclusions
+{{- if and (eq .chezmoi.os "linux") (or (contains .chezmoi.kernel.osrelease "microsoft") (contains .chezmoi.kernel.osrelease "WSL")) }}
+# WSL doesn't need Windows-specific configs
+windows-terminal/
+{{- end }}
+
+# Shell-specific exclusions based on availability
+{{- if not (lookPath "fish") }}
+dot_config/fish/
+{{- end }}
+{{- if not (lookPath "nu") }}
+dot_config/nushell/
+{{- end }}
+
+# Old/deprecated files that can be removed
+starship-nu.toml
+starship-powershell.toml
+run_before_01-install-tools.ps1.tmpl
+run_before_01-install-tools.sh.tmpl
+run_after_setup-powershell.ps1.tmpl
