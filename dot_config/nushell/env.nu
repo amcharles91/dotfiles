@@ -16,6 +16,3 @@
 #
 # You can remove these comments if you want or leave
 # them for future reference.
-
-# Starship config - works on Windows, Linux, and macOS
-$env.STARSHIP_CONFIG = "~/.config/starship-nu.toml"

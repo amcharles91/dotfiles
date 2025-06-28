@@ -1,3 +1,7 @@
+# DEPRECATED: This file is no longer used. All Unix shells now use starship.toml
+# PowerShell continues to use starship-powershell.toml
+# This file is kept for reference only and can be safely deleted.
+
 # Cyberpunk + Knight Theme — Clean, Aligned Prompt (Nu Shell)
 
 format = """

@@ -1,9 +1,17 @@
 {{ if ne .chezmoi.os "windows" }}
+# Ignore Windows-specific files on non-Windows systems
 readonly_OneDrive/
 windows-terminal/
-run_once_install-tools.ps1.tmpl
+.chezmoiscripts/run_before_01-install-tools.ps1.tmpl
+run_after_setup-powershell.ps1.tmpl
 {{ end }}
 
-{{ if ne .chezmoi.os "linux" }}
-run_once_install-tools.sh.tmpl
+{{ if eq .chezmoi.os "windows" }}
+# Ignore Unix shell scripts on Windows
+.chezmoiscripts/run_before_01-install-tools.sh.tmpl
 {{ end }}
+
+# Ignore old/deprecated files
+*.old
+*.deleted
+starship-theme-manager.nu*

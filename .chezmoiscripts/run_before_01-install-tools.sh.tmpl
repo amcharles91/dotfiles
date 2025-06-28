@@ -61,27 +61,47 @@ if ! command -v starship &>/dev/null; then
   # 1) Latest tag (e.g. v1.23.0)
   STAR_TAG=$(curl -fsSL https://api.github.com/repos/starship/starship/releases/latest \
                | grep -oP '"tag_name":\s*"\Kv[0-9.]+' | head -n1)
+  
+  if [[ -z "$STAR_TAG" ]]; then
+    echo "❌ Failed to fetch Starship version. Check your internet connection." >&2
+    exit 1
+  fi
+  
   echo "   • Latest version: $STAR_TAG"
-  # 2) Pick correct asset name (no version in filename)
-  OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+  # 2) Pick correct asset name for Linux only
   ARCH=$(uname -m)
-  case "${OS}_${ARCH}" in
-    linux_x86_64)   ASSET="starship-x86_64-unknown-linux-musl.tar.gz" ;;
-    linux_aarch64)  ASSET="starship-aarch64-unknown-linux-musl.tar.gz" ;;
-    darwin_x86_64)  ASSET="starship-x86_64-apple-darwin.tar.gz"       ;;
-    darwin_arm64)   ASSET="starship-aarch64-apple-darwin.tar.gz"      ;;
+  case "$ARCH" in
+    x86_64)   ASSET="starship-x86_64-unknown-linux-musl.tar.gz" ;;
+    aarch64)  ASSET="starship-aarch64-unknown-linux-musl.tar.gz" ;;
+    armv7l)   ASSET="starship-armv7-unknown-linux-musleabihf.tar.gz" ;;
     *)
-      echo "⚠️  No pre-built Starship for ${OS}_${ARCH}" >&2; exit 1 ;;
+      echo "⚠️  No pre-built Starship for Linux $ARCH" >&2
+      echo "   Visit https://starship.rs for manual installation" >&2
+      exit 1 ;;
   esac
   echo "   • Downloading asset: $ASSET"
-  # 3) Download, extract, install
+  
+  # 3) Download, extract, install with error handling
   tmp=$(mktemp -d)
-  curl -fsSL "https://github.com/starship/starship/releases/download/${STAR_TAG}/${ASSET}" \
-    | tar -xz -C "$tmp"
-  $SUDO mv "$tmp/starship" /usr/local/bin/
-  $SUDO chmod +x /usr/local/bin/starship
+  if curl -fsSL "https://github.com/starship/starship/releases/download/${STAR_TAG}/${ASSET}" \
+       -o "$tmp/starship.tar.gz"; then
+    if tar -xz -C "$tmp" -f "$tmp/starship.tar.gz"; then
+      $SUDO mv "$tmp/starship" /usr/local/bin/
+      $SUDO chmod +x /usr/local/bin/starship
+      echo "✅ Starship ${STAR_TAG} installed to /usr/local/bin/starship"
+    else
+      echo "❌ Failed to extract Starship archive" >&2
+      rm -rf "$tmp"
+      exit 1
+    fi
+  else
+    echo "❌ Failed to download Starship. Check your internet connection." >&2
+    rm -rf "$tmp"
+    exit 1
+  fi
   rm -rf "$tmp"
-  echo "✅ Starship ${STAR_TAG} installed to /usr/local/bin/starship"
+else
+  echo "✅ Starship already installed"
 fi
 
 # ── Fish shell ──────────────────────────────────────────────────────────
@@ -92,21 +112,89 @@ if ! command -v nu &>/dev/null; then
   echo "⬇️  Installing Nushell…"
   NU_VERSION=$(curl -fsSL https://api.github.com/repos/nushell/nushell/releases/latest \
                | grep -oP '"tag_name":\s*"\K[0-9.]+' | head -n1)
+  
+  if [[ -z "$NU_VERSION" ]]; then
+    echo "❌ Failed to fetch Nushell version. Check your internet connection." >&2
+    exit 1
+  fi
+  
   echo "   • Latest version: $NU_VERSION"
   ARCH=$(uname -m)
   case "$ARCH" in
     x86_64)  NU_ARCH="x86_64" ;;
     aarch64) NU_ARCH="aarch64" ;;
-    *) echo "⚠️  No pre-built Nu for $ARCH" >&2; exit 1 ;;
+    armv7l)  NU_ARCH="armv7" ;;
+    *) 
+      echo "⚠️  No pre-built Nu for $ARCH" >&2
+      echo "   Visit https://nushell.sh for manual installation" >&2
+      exit 1 ;;
   esac
   
   tmp=$(mktemp -d)
-  curl -fsSL "https://github.com/nushell/nushell/releases/download/${NU_VERSION}/nu-${NU_VERSION}-${NU_ARCH}-unknown-linux-musl.tar.gz" \
-    | tar -xz -C "$tmp"
-  $SUDO mv "$tmp/nu-${NU_VERSION}-${NU_ARCH}-unknown-linux-musl/nu" /usr/local/bin/
-  $SUDO chmod +x /usr/local/bin/nu
+  NU_URL="https://github.com/nushell/nushell/releases/download/${NU_VERSION}/nu-${NU_VERSION}-${NU_ARCH}-unknown-linux-musl.tar.gz"
+  
+  if curl -fsSL "$NU_URL" -o "$tmp/nu.tar.gz"; then
+    if tar -xz -C "$tmp" -f "$tmp/nu.tar.gz"; then
+      if [[ -f "$tmp/nu-${NU_VERSION}-${NU_ARCH}-unknown-linux-musl/nu" ]]; then
+        $SUDO mv "$tmp/nu-${NU_VERSION}-${NU_ARCH}-unknown-linux-musl/nu" /usr/local/bin/
+        $SUDO chmod +x /usr/local/bin/nu
+        echo "✅ Nushell ${NU_VERSION} installed to /usr/local/bin/nu"
+      else
+        echo "❌ Nu binary not found in extracted archive" >&2
+        ls -la "$tmp/" >&2
+        rm -rf "$tmp"
+        exit 1
+      fi
+    else
+      echo "❌ Failed to extract Nushell archive" >&2
+      rm -rf "$tmp"
+      exit 1
+    fi
+  else
+    echo "❌ Failed to download Nushell. Check your internet connection." >&2
+    rm -rf "$tmp"
+    exit 1
+  fi
   rm -rf "$tmp"
-  echo "✅ Nushell ${NU_VERSION} installed to /usr/local/bin/nu"
+else
+  echo "✅ Nushell already installed"
+fi
+
+# ── Configure Starship for all shells ───────────────────────────────────
+echo "⚙️  Configuring Starship for shells..."
+
+# Configure for Bash
+BASH_RC="$HOME/.bashrc"
+if command -v starship &>/dev/null && [[ -f "$BASH_RC" || -w "$HOME" ]]; then
+  if ! grep -q "starship init bash" "$BASH_RC" 2>/dev/null; then
+    echo "" >> "$BASH_RC"
+    echo "# Starship prompt" >> "$BASH_RC"
+    echo 'eval "$(starship init bash)"' >> "$BASH_RC"
+    echo "   ✓ Configured Starship for Bash"
+  else
+    echo "   ✓ Starship already configured for Bash"
+  fi
+fi
+
+# Configure for Fish
+FISH_CONFIG="$HOME/.config/fish/config.fish"
+if command -v fish &>/dev/null && command -v starship &>/dev/null; then
+  mkdir -p "$HOME/.config/fish"
+  if ! grep -q "starship init fish" "$FISH_CONFIG" 2>/dev/null; then
+    echo "" >> "$FISH_CONFIG"
+    echo "# Starship prompt" >> "$FISH_CONFIG"
+    echo "starship init fish | source" >> "$FISH_CONFIG"
+    echo "   ✓ Configured Starship for Fish"
+  else
+    echo "   ✓ Starship already configured for Fish"
+  fi
+fi
+
+# Nushell Starship configuration is handled by chezmoi-managed config files:
+# - ~/.config/nushell/env.nu sets STARSHIP_CONFIG
+# - ~/.config/nushell/config.nu initializes Starship
+if command -v nu &>/dev/null && command -v starship &>/dev/null; then
+  echo "   ✓ Nushell will use Starship via its config files"
 fi
 
 # ── Set Nushell as login shell (opt-out with KEEP_CURRENT_SHELL) ────────
@@ -117,6 +205,8 @@ if [[ "${KEEP_CURRENT_SHELL:-0}" != 1 ]] && command -v nu &>/dev/null \
   $SUDO chsh -s "$NU_PATH" "$USER"
   echo "⚙️  Nushell set as default. Log out & back in to activate."
 fi
+
+echo "🎉 Setup complete! Starship is configured for Bash and Fish."
 {{ end -}}
 
 {{ if eq .chezmoi.os "darwin" -}}
@@ -160,6 +250,57 @@ if ! command -v nu &>/dev/null; then
     || echo "⚠️  Install Homebrew or Nushell manually." >&2
 fi
 
+# ── Configure Starship for all shells ───────────────────────────────────
+echo "⚙️  Configuring Starship for shells..."
+
+# Configure for Bash
+BASH_RC="$HOME/.bash_profile"
+[[ ! -f "$BASH_RC" ]] && BASH_RC="$HOME/.bashrc"
+if command -v starship &>/dev/null && [[ -f "$BASH_RC" || -w "$HOME" ]]; then
+  if ! grep -q "starship init bash" "$BASH_RC" 2>/dev/null; then
+    echo "" >> "$BASH_RC"
+    echo "# Starship prompt" >> "$BASH_RC"
+    echo 'eval "$(starship init bash)"' >> "$BASH_RC"
+    echo "   ✓ Configured Starship for Bash"
+  else
+    echo "   ✓ Starship already configured for Bash"
+  fi
+fi
+
+# Configure for Zsh (default macOS shell)
+ZSH_RC="$HOME/.zshrc"
+if command -v starship &>/dev/null && [[ -f "$ZSH_RC" || -w "$HOME" ]]; then
+  if ! grep -q "starship init zsh" "$ZSH_RC" 2>/dev/null; then
+    echo "" >> "$ZSH_RC"
+    echo "# Starship prompt" >> "$ZSH_RC"
+    echo 'eval "$(starship init zsh)"' >> "$ZSH_RC"
+    echo "   ✓ Configured Starship for Zsh"
+  else
+    echo "   ✓ Starship already configured for Zsh"
+  fi
+fi
+
+# Configure for Fish
+FISH_CONFIG="$HOME/.config/fish/config.fish"
+if command -v fish &>/dev/null && command -v starship &>/dev/null; then
+  mkdir -p "$HOME/.config/fish"
+  if ! grep -q "starship init fish" "$FISH_CONFIG" 2>/dev/null; then
+    echo "" >> "$FISH_CONFIG"
+    echo "# Starship prompt" >> "$FISH_CONFIG"
+    echo "starship init fish | source" >> "$FISH_CONFIG"
+    echo "   ✓ Configured Starship for Fish"
+  else
+    echo "   ✓ Starship already configured for Fish"
+  fi
+fi
+
+# Nushell Starship configuration is handled by chezmoi-managed config files:
+# - ~/.config/nushell/env.nu sets STARSHIP_CONFIG
+# - ~/.config/nushell/config.nu initializes Starship
+if command -v nu &>/dev/null && command -v starship &>/dev/null; then
+  echo "   ✓ Nushell will use Starship via its config files"
+fi
+
 # ── Set Nushell as login shell (opt-out) ────────────────────────────────
 if [[ "${KEEP_CURRENT_SHELL:-0}" != 1 ]] && command -v nu &>/dev/null \
    && [[ "$SHELL" != "$(command -v nu)" ]]; then
@@ -168,4 +309,6 @@ if [[ "${KEEP_CURRENT_SHELL:-0}" != 1 ]] && command -v nu &>/dev/null \
   $SUDO chsh -s "$NU_PATH" "$USER"
   echo "⚙️  Nushell set as default. Log out & back in to activate."
 fi
+
+echo "🎉 Setup complete! Starship is configured for Bash, Zsh, and Fish."
 {{ end -}}

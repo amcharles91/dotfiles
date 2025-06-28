@@ -1,19 +1,61 @@
 {{ if eq .chezmoi.os "windows" -}}
-# Create PowerShell profile symlink
+# Configure PowerShell profile for Starship
+
+# Ensure profile directory exists
 $profileDir = Split-Path $PROFILE
 if (!(Test-Path $profileDir)) {
-    New-Item -ItemType Directory -Path $profileDir -Force
+    Write-Host "Creating PowerShell profile directory..." -ForegroundColor Yellow
+    New-Item -ItemType Directory -Path $profileDir -Force | Out-Null
 }
 
 $source = "$HOME\.config\powershell\profile.ps1"
 $target = $PROFILE
 
-# Remove existing file if it's not a symlink
-if ((Test-Path $target) -and -not ((Get-Item $target).Attributes -band [IO.FileAttributes]::ReparsePoint)) {
-    Remove-Item $target -Force
+# Check if source file exists
+if (!(Test-Path $source)) {
+    Write-Host "❌ PowerShell profile source not found at: $source" -ForegroundColor Red
+    exit 1
+}
+
+# Check if target exists and what it is
+if (Test-Path $target) {
+    $item = Get-Item $target -Force
+    
+    # If it's already a symlink pointing to our source, we're done
+    if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) {
+        $currentTarget = $item.Target
+        if ($currentTarget -eq $source) {
+            Write-Host "✓ PowerShell profile already linked correctly" -ForegroundColor Green
+            exit 0
+        } else {
+            Write-Host "Removing existing symlink pointing to: $currentTarget" -ForegroundColor Yellow
+            Remove-Item $target -Force
+        }
+    } else {
+        # It's a regular file - back it up
+        $backupPath = "$target.backup-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+        Write-Host "Backing up existing profile to: $backupPath" -ForegroundColor Yellow
+        Move-Item $target $backupPath -Force
+    }
 }
 
 # Create symlink
-New-Item -ItemType SymbolicLink -Path $target -Target $source -Force
-Write-Host "PowerShell profile linked to $source"
+try {
+    New-Item -ItemType SymbolicLink -Path $target -Target $source -Force | Out-Null
+    Write-Host "✓ PowerShell profile linked to $source" -ForegroundColor Green
+    
+    # Verify the profile works
+    if (Test-Path $target) {
+        $content = Get-Content $target -Raw
+        if ($content -match "STARSHIP_CONFIG" -and $content -match "starship init") {
+            Write-Host "✓ Starship configuration verified in profile" -ForegroundColor Green
+        } else {
+            Write-Host "⚠️  Profile exists but Starship configuration not found" -ForegroundColor Yellow
+        }
+    }
+} catch {
+    Write-Host "❌ Failed to create symbolic link: $_" -ForegroundColor Red
+    Write-Host "You may need to run this script as Administrator or enable Developer Mode" -ForegroundColor Yellow
+    exit 1
+}
 {{ end -}}
