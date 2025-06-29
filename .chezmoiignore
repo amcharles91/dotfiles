@@ -57,15 +57,13 @@ dot_zshrc.tmpl
 dot_config/fish/
 {{ else if eq .chezmoi.os "darwin" }}
 # macOS specific
+# macOS doesn't need Windows Terminal
+windows-terminal/
 {{ else }}
 # Linux specific
-{{ end }}
-
-# WSL-specific exclusions
-{{- if and (eq .chezmoi.os "linux") (or (contains .chezmoi.kernel.osrelease "microsoft") (contains .chezmoi.kernel.osrelease "WSL")) }}
-# WSL doesn't need Windows-specific configs
+# Linux doesn't need Windows Terminal
 windows-terminal/
-{{- end }}
+{{ end }}
 
 # Shell-specific exclusions based on availability
 {{- if not (lookPath "fish") }}
