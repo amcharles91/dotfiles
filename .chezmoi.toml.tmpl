@@ -1,7 +1,7 @@
 {{- $name := promptStringOnce . "name" "Your full name" -}}
 {{- $email := promptStringOnce . "email" "Your email address" -}}
 {{- $githubUser := promptStringOnce . "githubUser" "Your GitHub username" -}}
-{{- $editor := promptStringOnce . "editor" "Your preferred editor (vim/nvim/code/nano)" "vim" -}}
+{{- $editor := promptStringOnce . "editor" "Your preferred editor (vim/nvim/code/nano)" "nano" -}}
 
 {{- $isWSL := false -}}
 {{- if eq .chezmoi.os "linux" -}}
@@ -73,13 +73,13 @@
     # Better error messages for missing template keys
     options = ["missingkey=error"]
 
-[textconv]
+{{- if lookPath "jq" }}
+[[textconv]]
     # Pretty print JSON files for better diffs
-    {{- if lookPath "jq" }}
     command = "jq"
     args = ["."]
     pattern = "**/*.json"
-    {{- end }}
+{{- end }}
 
 # Platform-specific settings
 {{- if $isWSL }}
