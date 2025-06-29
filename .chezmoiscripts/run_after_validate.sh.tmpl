@@ -137,7 +137,11 @@ echo "Checking fonts..."
 echo "================"
 
 if command -v fc-list &> /dev/null; then
-    if fc-list | grep -qi "JetBrainsMono.*Nerd"; then
+    # Force font cache refresh before checking
+    fc-cache -f 2>/dev/null || true
+    
+    # Check for JetBrains Mono Nerd Font with various possible names
+    if fc-list | grep -Ei "JetBrains.*Mono.*Nerd|JetBrainsMono.*NF" | grep -v "\.uuid" > /dev/null; then
         echo -e "${GREEN}✓${NC} JetBrains Mono Nerd Font is installed"
     else
         echo -e "${YELLOW}⚠${NC} JetBrains Mono Nerd Font is not installed"
