@@ -195,14 +195,14 @@ if ! command -v nu &> /dev/null; then
                 
                 # Get latest release version with rate limit handling
                 echo "  Fetching latest Nushell version..."
-                NUSHELL_VERSION=$(curl -s -H "Accept: application/vnd.github.v3+json" \
+                NUSHELL_VERSION=$(curl -fsS -H "Accept: application/vnd.github.v3+json" \
                     https://api.github.com/repos/nushell/nushell/releases/latest | \
                     grep -Po '"tag_name": "\K[^"]*' || echo "")
                 
                 if [[ -z "$NUSHELL_VERSION" ]]; then
                     # Retry once in case of temporary failure
                     sleep 2
-                    NUSHELL_VERSION=$(curl -s -H "Accept: application/vnd.github.v3+json" \
+                    NUSHELL_VERSION=$(curl -fsS -H "Accept: application/vnd.github.v3+json" \
                         https://api.github.com/repos/nushell/nushell/releases/latest | \
                         grep -Po '"tag_name": "\K[^"]*' || echo "")
                 fi
@@ -221,25 +221,19 @@ if ! command -v nu &> /dev/null; then
                     
                     if [[ -n "$ARCH_NAME" ]]; then
                         DOWNLOAD_URL="https://github.com/nushell/nushell/releases/download/${NUSHELL_VERSION}/nu-${NUSHELL_VERSION}-${ARCH_NAME}.tar.gz"
-                        CHECKSUM_URL="https://github.com/nushell/nushell/releases/download/${NUSHELL_VERSION}/nu-${NUSHELL_VERSION}-${ARCH_NAME}.tar.gz.sha256"
                         TEMP_DIR=$(mktemp -d)
                         
                         echo "  Downloading Nushell ${NUSHELL_VERSION}..."
-                        if curl -sL "$DOWNLOAD_URL" -o "$TEMP_DIR/nushell.tar.gz"; then
-                            # Try to get checksum
-                            EXPECTED_CHECKSUM=$(curl -sL "$CHECKSUM_URL" | cut -d' ' -f1 || echo "")
-                            
-                            # Verify checksum if available
-                            if [[ -n "$EXPECTED_CHECKSUM" ]]; then
-                                echo "  Verifying checksum..."
-                                if ! verify_checksum "$TEMP_DIR/nushell.tar.gz" "$EXPECTED_CHECKSUM"; then
-                                    rm -rf "$TEMP_DIR"
-                                    echo "  ⚠️  Checksum verification failed, aborting installation"
-                                    echo "  📝 Please install manually from: https://www.nushell.sh/"
-                                    return
-                                fi
+                        if curl -fsSL "$DOWNLOAD_URL" -o "$TEMP_DIR/nushell.tar.gz"; then
+                            # Nushell doesn't provide .sha256 files in their releases
+                            # We can at least verify the download completed successfully
+                            if [[ -f "$TEMP_DIR/nushell.tar.gz" ]] && [[ -s "$TEMP_DIR/nushell.tar.gz" ]]; then
+                                echo "  ✅ Download completed successfully"
                             else
-                                echo "  ⚠️  No checksum available for verification"
+                                echo "  ❌ Download appears incomplete or corrupted"
+                                rm -rf "$TEMP_DIR"
+                                echo "  📝 Please install manually from: https://www.nushell.sh/"
+                                return
                             fi
                             
                             tar -xzf "$TEMP_DIR/nushell.tar.gz" -C "$TEMP_DIR"
@@ -443,14 +437,14 @@ install_cli_tools() {
                     echo "  ℹ️  bat not in Debian repos, attempting manual install..."
                     # Download bat binary for Debian with rate limit handling
                     echo "  Fetching latest bat version..."
-                    BAT_VERSION=$(curl -s -H "Accept: application/vnd.github.v3+json" \
+                    BAT_VERSION=$(curl -fsS -H "Accept: application/vnd.github.v3+json" \
                         https://api.github.com/repos/sharkdp/bat/releases/latest | \
                         grep -Po '"tag_name": "v\K[^"]*' || echo "")
                     
                     if [[ -z "$BAT_VERSION" ]]; then
                         # Retry once
                         sleep 2
-                        BAT_VERSION=$(curl -s -H "Accept: application/vnd.github.v3+json" \
+                        BAT_VERSION=$(curl -fsS -H "Accept: application/vnd.github.v3+json" \
                             https://api.github.com/repos/sharkdp/bat/releases/latest | \
                             grep -Po '"tag_name": "v\K[^"]*' || echo "")
                     fi
