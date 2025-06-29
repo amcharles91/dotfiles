@@ -162,6 +162,54 @@ install_nerd_font
 
 # Final setup message
 echo ""
+# Install modern CLI tools
+echo "📦 Installing modern CLI tools..."
+
+install_cli_tools() {
+    echo "🔧 Attempting to install developer tools..."
+    
+    case "$PKG_MGR" in
+        apt)
+            sudo apt-get update -qq
+            # Install available tools, continue if some fail
+            for tool in bat ripgrep fd-find; do
+                sudo apt-get install -y "$tool" 2>/dev/null || echo "  ⚠️  $tool not available in apt"
+            done
+            ;;
+        dnf)
+            for tool in bat ripgrep fd-find git-delta lsd; do
+                sudo dnf install -y "$tool" 2>/dev/null || echo "  ⚠️  $tool not available in dnf"
+            done
+            ;;
+        pacman)
+            for tool in bat ripgrep fd lsd; do
+                sudo pacman -S --noconfirm "$tool" 2>/dev/null || echo "  ⚠️  $tool not available in pacman"
+            done
+            ;;
+        brew)
+            brew install bat ripgrep fd git-delta lsd || true
+            ;;
+        *)
+            echo "⚠️  No supported package manager found"
+            echo "   Please install these tools manually:"
+            echo "   - bat: https://github.com/sharkdp/bat"
+            echo "   - ripgrep: https://github.com/BurntSushi/ripgrep"
+            echo "   - fd: https://github.com/sharkdp/fd"
+            echo "   - delta: https://github.com/dandavison/delta"
+            echo "   - lsd: https://github.com/lsd-rs/lsd"
+            return
+            ;;
+    esac
+    
+    echo "✅ CLI tools installation attempted"
+    echo "   Run 'bat --version' etc. to verify what's installed"
+}
+
+# Only install if package manager is available
+if [[ "$PKG_MGR" != "none" ]] && [[ "$PKG_MGR" != "winget" ]]; then
+    install_cli_tools
+fi
+
 echo "✨ Installation complete!"
 echo ""
 echo "📝 Next steps:"
