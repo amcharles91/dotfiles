@@ -59,9 +59,12 @@ if ! command -v nu &> /dev/null; then
     
     case "$PKG_MGR" in
         apt)
-            # Nushell requires adding a PPA or manual install
-            if ! command -v nu &> /dev/null; then
-                echo "  ℹ️  Nushell not in default apt repos"
+            # Try snap if available (Ubuntu/Debian with snapd)
+            if command -v snap &> /dev/null; then
+                echo "  📦 Installing Nushell via snap..."
+                sudo snap install nu --classic || echo "  ⚠️  Failed to install Nushell via snap"
+            else
+                echo "  ℹ️  Nushell not in default apt repos and snap not available"
                 echo "  📝 To install: https://www.nushell.sh/book/installation.html#ubuntu-debian"
             fi
             ;;
@@ -177,8 +180,21 @@ install_cli_tools() {
         apt)
             sudo apt-get update -qq
             # Install available tools, continue if some fail
-            for tool in bat ripgrep fd-find; do
-                sudo apt-get install -y "$tool" 2>/dev/null || echo "  ⚠️  $tool not available in apt"
+            for tool in bat ripgrep fd-find git-delta lsd; do
+                if ! sudo apt-get install -y "$tool" 2>/dev/null; then
+                    # Try snap as fallback
+                    if command -v snap &> /dev/null; then
+                        case "$tool" in
+                            bat) sudo snap install batcat --classic && sudo snap alias batcat bat ;;
+                            ripgrep) sudo snap install ripgrep --classic ;;
+                            fd-find) sudo snap install fd --classic ;;
+                            git-delta) echo "  ℹ️  git-delta not available in snap" ;;
+                            lsd) sudo snap install lsd --classic ;;
+                        esac || echo "  ⚠️  $tool not available in apt or snap"
+                    else
+                        echo "  ⚠️  $tool not available in apt"
+                    fi
+                fi
             done
             ;;
         dnf)
