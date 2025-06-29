@@ -1,7 +1,7 @@
 {{- if ne .chezmoi.os "windows" -}}
 #!/bin/bash
 # Validation script to ensure everything is properly configured
-set -euo pipefail
+set -uo pipefail  # Remove -e to continue validation even if commands fail
 
 echo "🔍 Validating chezmoi configuration..."
 

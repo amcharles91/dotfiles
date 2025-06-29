@@ -62,7 +62,7 @@ if ! command -v nu &> /dev/null; then
             # Try snap if available (Ubuntu/Debian with snapd)
             if command -v snap &> /dev/null; then
                 echo "  📦 Installing Nushell via snap..."
-                sudo snap install nu --classic || echo "  ⚠️  Failed to install Nushell via snap"
+                sudo snap install nushell --classic || echo "  ⚠️  Failed to install Nushell via snap"
             else
                 echo "  ℹ️  Nushell not in default apt repos and snap not available"
                 echo "  📝 To install: https://www.nushell.sh/book/installation.html#ubuntu-debian"
