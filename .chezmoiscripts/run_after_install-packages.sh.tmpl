@@ -54,6 +54,98 @@ echo "Detected OS: $OS_TYPE"
 [[ -n "$LINUX_DISTRO" ]] && echo "Detected Linux distribution: $LINUX_DISTRO"
 echo "Detected package manager: $PKG_MGR"
 
+# Ensure ~/.local/bin is in PATH from the start
+mkdir -p "$HOME/.local/bin"
+export PATH="$HOME/.local/bin:$PATH"
+
+# Function to verify SHA256 checksum
+verify_checksum() {
+    local file="$1"
+    local expected_checksum="$2"
+    
+    if [[ -z "$expected_checksum" ]]; then
+        echo "  ⚠️  No checksum provided, skipping verification"
+        return 0
+    fi
+    
+    local actual_checksum
+    if command -v sha256sum &> /dev/null; then
+        actual_checksum=$(sha256sum "$file" | cut -d' ' -f1)
+    elif command -v shasum &> /dev/null; then
+        actual_checksum=$(shasum -a 256 "$file" | cut -d' ' -f1)
+    else
+        echo "  ⚠️  No SHA256 tool available, skipping verification"
+        return 0
+    fi
+    
+    if [[ "$actual_checksum" == "$expected_checksum" ]]; then
+        echo "  ✅ Checksum verified"
+        return 0
+    else
+        echo "  ❌ Checksum verification failed!"
+        echo "  Expected: $expected_checksum"
+        echo "  Actual:   $actual_checksum"
+        return 1
+    fi
+}
+
+# Function to ensure ~/.local/bin is in PATH
+ensure_local_bin_in_path() {
+    local LOCAL_BIN="$HOME/.local/bin"
+    
+    # Create directory if it doesn't exist
+    mkdir -p "$LOCAL_BIN"
+    
+    # Check if already in PATH
+    if [[ ":$PATH:" == *":$LOCAL_BIN:"* ]]; then
+        return 0
+    fi
+    
+    echo "  📝 Adding ~/.local/bin to PATH..."
+    
+    # Determine which shell config to update
+    local SHELL_CONFIG=""
+    if [[ -f "$HOME/.bashrc" ]]; then
+        SHELL_CONFIG="$HOME/.bashrc"
+    elif [[ -f "$HOME/.zshrc" ]]; then
+        SHELL_CONFIG="$HOME/.zshrc"
+    elif [[ -f "$HOME/.profile" ]]; then
+        SHELL_CONFIG="$HOME/.profile"
+    fi
+    
+    if [[ -n "$SHELL_CONFIG" ]]; then
+        # Check if PATH export already exists
+        if ! grep -q "export PATH.*\.local/bin" "$SHELL_CONFIG"; then
+            echo "" >> "$SHELL_CONFIG"
+            echo "# Added by chezmoi dotfiles installer" >> "$SHELL_CONFIG"
+            echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$SHELL_CONFIG"
+            echo "  ✅ Added ~/.local/bin to PATH in $SHELL_CONFIG"
+            echo "  📝 Please run: source $SHELL_CONFIG"
+        else
+            echo "  ✅ ~/.local/bin already configured in $SHELL_CONFIG"
+        fi
+    else
+        echo "  ⚠️  Could not find shell config file"
+        echo "  📝 Please add this to your shell config:"
+        echo '     export PATH="$HOME/.local/bin:$PATH"'
+    fi
+    
+    # Export for current session
+    export PATH="$HOME/.local/bin:$PATH"
+}
+
+# Track if apt-get update has been run
+APT_UPDATED=false
+
+# Function to ensure apt-get update has been run once
+ensure_apt_updated() {
+    if [[ "$PKG_MGR" == "apt" ]] && [[ "$APT_UPDATED" == "false" ]]; then
+        echo "📦 Updating package lists..."
+        sudo apt-get update -qq
+        APT_UPDATED=true
+    fi
+}
+
 # Install Starship
 if ! command -v starship &> /dev/null; then
     echo "📦 Installing Starship..."
@@ -61,11 +153,31 @@ if ! command -v starship &> /dev/null; then
     if [[ "$OS_TYPE" == "windows" ]] && [[ "$PKG_MGR" == "winget" ]]; then
         winget install --id Starship.Starship -e --silent --accept-package-agreements --accept-source-agreements
     else
-        # Use official installer for all other platforms
-        curl -sS https://starship.rs/install.sh | sh -s -- -y
+        # Download installer script first for security
+        TEMP_SCRIPT=$(mktemp)
+        echo "  Downloading Starship installer..."
+        
+        if curl -sS https://starship.rs/install.sh -o "$TEMP_SCRIPT"; then
+            # Check if script was downloaded successfully
+            if [[ -s "$TEMP_SCRIPT" ]]; then
+                echo "  Running Starship installer..."
+                sh "$TEMP_SCRIPT" -y
+                rm -f "$TEMP_SCRIPT"
+            else
+                echo "  ⚠️  Failed to download Starship installer"
+                echo "  📝 Please install manually from: https://starship.rs/"
+                rm -f "$TEMP_SCRIPT"
+            fi
+        else
+            echo "  ⚠️  Failed to download Starship installer"
+            echo "  📝 Please install manually from: https://starship.rs/"
+            rm -f "$TEMP_SCRIPT"
+        fi
     fi
     
-    echo "✅ Starship installed"
+    if command -v starship &> /dev/null; then
+        echo "✅ Starship installed"
+    fi
 else
     echo "✅ Starship already installed"
 fi
@@ -81,8 +193,19 @@ if ! command -v nu &> /dev/null; then
                 echo "  ℹ️  Detected Debian - Nushell not in default repos"
                 echo "  🔧 Attempting to install via binary release..."
                 
-                # Get latest release version
-                NUSHELL_VERSION=$(curl -s https://api.github.com/repos/nushell/nushell/releases/latest | grep -Po '"tag_name": "\K[^"]*')
+                # Get latest release version with rate limit handling
+                echo "  Fetching latest Nushell version..."
+                NUSHELL_VERSION=$(curl -s -H "Accept: application/vnd.github.v3+json" \
+                    https://api.github.com/repos/nushell/nushell/releases/latest | \
+                    grep -Po '"tag_name": "\K[^"]*' || echo "")
+                
+                if [[ -z "$NUSHELL_VERSION" ]]; then
+                    # Retry once in case of temporary failure
+                    sleep 2
+                    NUSHELL_VERSION=$(curl -s -H "Accept: application/vnd.github.v3+json" \
+                        https://api.github.com/repos/nushell/nushell/releases/latest | \
+                        grep -Po '"tag_name": "\K[^"]*' || echo "")
+                fi
                 
                 if [[ -n "$NUSHELL_VERSION" ]]; then
                     # Determine architecture
@@ -98,10 +221,27 @@ if ! command -v nu &> /dev/null; then
                     
                     if [[ -n "$ARCH_NAME" ]]; then
                         DOWNLOAD_URL="https://github.com/nushell/nushell/releases/download/${NUSHELL_VERSION}/nu-${NUSHELL_VERSION}-${ARCH_NAME}.tar.gz"
+                        CHECKSUM_URL="https://github.com/nushell/nushell/releases/download/${NUSHELL_VERSION}/nu-${NUSHELL_VERSION}-${ARCH_NAME}.tar.gz.sha256"
                         TEMP_DIR=$(mktemp -d)
                         
                         echo "  Downloading Nushell ${NUSHELL_VERSION}..."
                         if curl -sL "$DOWNLOAD_URL" -o "$TEMP_DIR/nushell.tar.gz"; then
+                            # Try to get checksum
+                            EXPECTED_CHECKSUM=$(curl -sL "$CHECKSUM_URL" | cut -d' ' -f1 || echo "")
+                            
+                            # Verify checksum if available
+                            if [[ -n "$EXPECTED_CHECKSUM" ]]; then
+                                echo "  Verifying checksum..."
+                                if ! verify_checksum "$TEMP_DIR/nushell.tar.gz" "$EXPECTED_CHECKSUM"; then
+                                    rm -rf "$TEMP_DIR"
+                                    echo "  ⚠️  Checksum verification failed, aborting installation"
+                                    echo "  📝 Please install manually from: https://www.nushell.sh/"
+                                    return
+                                fi
+                            else
+                                echo "  ⚠️  No checksum available for verification"
+                            fi
+                            
                             tar -xzf "$TEMP_DIR/nushell.tar.gz" -C "$TEMP_DIR"
                             
                             # Install to ~/.local/bin
@@ -111,14 +251,16 @@ if ! command -v nu &> /dev/null; then
                             
                             rm -rf "$TEMP_DIR"
                             echo "  ✅ Nushell installed to ~/.local/bin/nu"
-                            echo "  📝 Make sure ~/.local/bin is in your PATH"
+                            
+                            # Ensure PATH is configured
+                            ensure_local_bin_in_path
                         else
                             echo "  ⚠️  Failed to download Nushell"
                             echo "  📝 Please install manually from: https://www.nushell.sh/"
                         fi
                     fi
                 else
-                    echo "  ⚠️  Could not determine latest Nushell version"
+                    echo "  ⚠️  Could not determine latest Nushell version (API rate limit?)"
                     echo "  📝 Alternative installation methods:"
                     echo "     - Install Rust and run: cargo install nu"
                     echo "     - Download from: https://github.com/nushell/nushell/releases"
@@ -173,20 +315,20 @@ if [[ "$OS_TYPE" != "windows" ]] && ! command -v fish &> /dev/null; then
         apt)
             if [[ "$LINUX_DISTRO" == "debian" ]]; then
                 # Fish is available in Debian repos
-                sudo apt-get update -qq
+                ensure_apt_updated
                 sudo apt-get install -y fish || echo "  ⚠️  Fish not available in your Debian version"
             elif [[ "$LINUX_DISTRO" == "ubuntu" ]]; then
                 # Fish is in universe repository on Ubuntu
-                sudo apt-get update -qq
+                ensure_apt_updated
                 sudo apt-get install -y fish || {
                     echo "  ℹ️  Fish not found, enabling universe repository..."
                     sudo add-apt-repository universe -y 2>/dev/null
-                    sudo apt-get update -qq
+                    sudo apt-get update -qq  # Need to update after adding repository
                     sudo apt-get install -y fish || echo "  ⚠️  Failed to install Fish"
                 }
             else
                 # Generic apt system
-                sudo apt-get update -qq
+                ensure_apt_updated
                 sudo apt-get install -y fish || echo "  ⚠️  Fish not available"
             fi
             ;;
@@ -284,7 +426,7 @@ install_cli_tools() {
     
     case "$PKG_MGR" in
         apt)
-            sudo apt-get update -qq
+            ensure_apt_updated
             
             # Handle distribution-specific package availability
             if [[ "$LINUX_DISTRO" == "debian" ]]; then
@@ -299,23 +441,45 @@ install_cli_tools() {
                 # bat might not be available in older Debian versions
                 if ! sudo apt-get install -y bat 2>/dev/null; then
                     echo "  ℹ️  bat not in Debian repos, attempting manual install..."
-                    # Download bat binary for Debian
-                    BAT_VERSION=$(curl -s https://api.github.com/repos/sharkdp/bat/releases/latest | grep -Po '"tag_name": "v\K[^"]*')
+                    # Download bat binary for Debian with rate limit handling
+                    echo "  Fetching latest bat version..."
+                    BAT_VERSION=$(curl -s -H "Accept: application/vnd.github.v3+json" \
+                        https://api.github.com/repos/sharkdp/bat/releases/latest | \
+                        grep -Po '"tag_name": "v\K[^"]*' || echo "")
+                    
+                    if [[ -z "$BAT_VERSION" ]]; then
+                        # Retry once
+                        sleep 2
+                        BAT_VERSION=$(curl -s -H "Accept: application/vnd.github.v3+json" \
+                            https://api.github.com/repos/sharkdp/bat/releases/latest | \
+                            grep -Po '"tag_name": "v\K[^"]*' || echo "")
+                    fi
+                    
                     if [[ -n "$BAT_VERSION" ]]; then
                         ARCH=$(dpkg --print-architecture)
                         BAT_DEB="bat_${BAT_VERSION}_${ARCH}.deb"
                         BAT_URL="https://github.com/sharkdp/bat/releases/download/v${BAT_VERSION}/${BAT_DEB}"
                         TEMP_DIR=$(mktemp -d)
                         
+                        echo "  Downloading bat ${BAT_VERSION}..."
                         if curl -sL "$BAT_URL" -o "$TEMP_DIR/${BAT_DEB}"; then
-                            sudo dpkg -i "$TEMP_DIR/${BAT_DEB}" 2>/dev/null || {
-                                echo "  📦 Installing dependencies..."
-                                sudo apt-get install -f -y
-                            }
+                            # bat doesn't provide .sha256 files, but we can verify the .deb is valid
+                            if dpkg-deb --info "$TEMP_DIR/${BAT_DEB}" &> /dev/null; then
+                                echo "  ✅ Package integrity verified"
+                                sudo dpkg -i "$TEMP_DIR/${BAT_DEB}" 2>/dev/null || {
+                                    echo "  📦 Installing dependencies..."
+                                    sudo apt-get install -f -y
+                                }
+                            else
+                                echo "  ❌ Downloaded package appears corrupted"
+                            fi
                             rm -rf "$TEMP_DIR"
                         else
                             echo "  ⚠️  Failed to download bat"
                         fi
+                    else
+                        echo "  ⚠️  Could not determine bat version (API rate limit?)"
+                        echo "  📝 Please install manually from: https://github.com/sharkdp/bat/releases"
                     fi
                 fi
                 
