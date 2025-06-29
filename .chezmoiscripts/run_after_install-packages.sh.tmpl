@@ -14,6 +14,16 @@ detect_os() {
     esac
 }
 
+# Function to detect Linux distribution
+detect_linux_distro() {
+    if [[ -f /etc/os-release ]]; then
+        . /etc/os-release
+        echo "${ID}"
+    else
+        echo "unknown"
+    fi
+}
+
 # Function to detect package manager
 detect_package_manager() {
     if command -v apt-get &> /dev/null; then
@@ -33,8 +43,15 @@ detect_package_manager() {
 
 OS_TYPE=$(detect_os)
 PKG_MGR=$(detect_package_manager)
+LINUX_DISTRO=""
+
+# Detect Linux distribution if on Linux
+if [[ "$OS_TYPE" == "linux" ]]; then
+    LINUX_DISTRO=$(detect_linux_distro)
+fi
 
 echo "Detected OS: $OS_TYPE"
+[[ -n "$LINUX_DISTRO" ]] && echo "Detected Linux distribution: $LINUX_DISTRO"
 echo "Detected package manager: $PKG_MGR"
 
 # Install Starship
@@ -59,13 +76,73 @@ if ! command -v nu &> /dev/null; then
     
     case "$PKG_MGR" in
         apt)
-            # Try snap if available (Ubuntu/Debian with snapd)
-            if command -v snap &> /dev/null; then
-                echo "  📦 Installing Nushell via snap..."
-                sudo snap install nushell --classic || echo "  ⚠️  Failed to install Nushell via snap"
+            if [[ "$LINUX_DISTRO" == "debian" ]]; then
+                # Debian-specific installation
+                echo "  ℹ️  Detected Debian - Nushell not in default repos"
+                echo "  🔧 Attempting to install via binary release..."
+                
+                # Get latest release version
+                NUSHELL_VERSION=$(curl -s https://api.github.com/repos/nushell/nushell/releases/latest | grep -Po '"tag_name": "\K[^"]*')
+                
+                if [[ -n "$NUSHELL_VERSION" ]]; then
+                    # Determine architecture
+                    ARCH=$(uname -m)
+                    case "$ARCH" in
+                        x86_64) ARCH_NAME="x86_64-unknown-linux-musl" ;;
+                        aarch64) ARCH_NAME="aarch64-unknown-linux-gnu" ;;
+                        *) 
+                            echo "  ⚠️  Unsupported architecture: $ARCH"
+                            echo "  📝 Please install manually from: https://www.nushell.sh/book/installation.html"
+                            ;;
+                    esac
+                    
+                    if [[ -n "$ARCH_NAME" ]]; then
+                        DOWNLOAD_URL="https://github.com/nushell/nushell/releases/download/${NUSHELL_VERSION}/nu-${NUSHELL_VERSION}-${ARCH_NAME}.tar.gz"
+                        TEMP_DIR=$(mktemp -d)
+                        
+                        echo "  Downloading Nushell ${NUSHELL_VERSION}..."
+                        if curl -sL "$DOWNLOAD_URL" -o "$TEMP_DIR/nushell.tar.gz"; then
+                            tar -xzf "$TEMP_DIR/nushell.tar.gz" -C "$TEMP_DIR"
+                            
+                            # Install to ~/.local/bin
+                            mkdir -p "$HOME/.local/bin"
+                            cp "$TEMP_DIR/nu-${NUSHELL_VERSION}-${ARCH_NAME}/nu" "$HOME/.local/bin/"
+                            chmod +x "$HOME/.local/bin/nu"
+                            
+                            rm -rf "$TEMP_DIR"
+                            echo "  ✅ Nushell installed to ~/.local/bin/nu"
+                            echo "  📝 Make sure ~/.local/bin is in your PATH"
+                        else
+                            echo "  ⚠️  Failed to download Nushell"
+                            echo "  📝 Please install manually from: https://www.nushell.sh/"
+                        fi
+                    fi
+                else
+                    echo "  ⚠️  Could not determine latest Nushell version"
+                    echo "  📝 Alternative installation methods:"
+                    echo "     - Install Rust and run: cargo install nu"
+                    echo "     - Download from: https://github.com/nushell/nushell/releases"
+                fi
+            elif [[ "$LINUX_DISTRO" == "ubuntu" ]]; then
+                # Ubuntu-specific installation - prefer snap
+                if command -v snap &> /dev/null; then
+                    echo "  📦 Installing Nushell via snap..."
+                    sudo snap install nushell --classic || echo "  ⚠️  Failed to install Nushell via snap"
+                else
+                    echo "  ℹ️  Snap not available on Ubuntu"
+                    echo "  📝 Installing snapd..."
+                    sudo apt-get install -y snapd
+                    sudo snap install nushell --classic || echo "  ⚠️  Failed to install Nushell"
+                fi
             else
-                echo "  ℹ️  Nushell not in default apt repos and snap not available"
-                echo "  📝 To install: https://www.nushell.sh/book/installation.html#ubuntu-debian"
+                # Generic apt-based system
+                if command -v snap &> /dev/null; then
+                    echo "  📦 Installing Nushell via snap..."
+                    sudo snap install nushell --classic || echo "  ⚠️  Failed to install Nushell via snap"
+                else
+                    echo "  ℹ️  Nushell not in default apt repos and snap not available"
+                    echo "  📝 To install: https://www.nushell.sh/book/installation.html#ubuntu-debian"
+                fi
             fi
             ;;
         dnf)
@@ -94,9 +171,24 @@ if [[ "$OS_TYPE" != "windows" ]] && ! command -v fish &> /dev/null; then
     
     case "$PKG_MGR" in
         apt)
-            # Fish is in universe repository
-            sudo apt-get update -qq
-            sudo apt-get install -y fish || echo "  ⚠️  Fish not available, may need 'sudo add-apt-repository universe'"
+            if [[ "$LINUX_DISTRO" == "debian" ]]; then
+                # Fish is available in Debian repos
+                sudo apt-get update -qq
+                sudo apt-get install -y fish || echo "  ⚠️  Fish not available in your Debian version"
+            elif [[ "$LINUX_DISTRO" == "ubuntu" ]]; then
+                # Fish is in universe repository on Ubuntu
+                sudo apt-get update -qq
+                sudo apt-get install -y fish || {
+                    echo "  ℹ️  Fish not found, enabling universe repository..."
+                    sudo add-apt-repository universe -y 2>/dev/null
+                    sudo apt-get update -qq
+                    sudo apt-get install -y fish || echo "  ⚠️  Failed to install Fish"
+                }
+            else
+                # Generic apt system
+                sudo apt-get update -qq
+                sudo apt-get install -y fish || echo "  ⚠️  Fish not available"
+            fi
             ;;
         dnf)
             sudo dnf install -y fish
@@ -193,23 +285,76 @@ install_cli_tools() {
     case "$PKG_MGR" in
         apt)
             sudo apt-get update -qq
-            # Install available tools, continue if some fail
-            for tool in bat ripgrep fd-find git-delta lsd; do
-                if ! sudo apt-get install -y "$tool" 2>/dev/null; then
-                    # Try snap as fallback
-                    if command -v snap &> /dev/null; then
-                        case "$tool" in
-                            bat) sudo snap install batcat --classic && sudo snap alias batcat bat ;;
-                            ripgrep) sudo snap install ripgrep --classic ;;
-                            fd-find) sudo snap install fd --classic ;;
-                            git-delta) echo "  ℹ️  git-delta not available in snap" ;;
-                            lsd) sudo snap install lsd --classic ;;
-                        esac || echo "  ⚠️  $tool not available in apt or snap"
-                    else
-                        echo "  ⚠️  $tool not available in apt"
+            
+            # Handle distribution-specific package availability
+            if [[ "$LINUX_DISTRO" == "debian" ]]; then
+                echo "  ℹ️  Installing tools for Debian..."
+                
+                # ripgrep is available in Debian
+                sudo apt-get install -y ripgrep 2>/dev/null || echo "  ⚠️  ripgrep not available"
+                
+                # fd-find is available in Debian 10+ as fd-find
+                sudo apt-get install -y fd-find 2>/dev/null || echo "  ⚠️  fd-find not available"
+                
+                # bat might not be available in older Debian versions
+                if ! sudo apt-get install -y bat 2>/dev/null; then
+                    echo "  ℹ️  bat not in Debian repos, attempting manual install..."
+                    # Download bat binary for Debian
+                    BAT_VERSION=$(curl -s https://api.github.com/repos/sharkdp/bat/releases/latest | grep -Po '"tag_name": "v\K[^"]*')
+                    if [[ -n "$BAT_VERSION" ]]; then
+                        ARCH=$(dpkg --print-architecture)
+                        BAT_DEB="bat_${BAT_VERSION}_${ARCH}.deb"
+                        BAT_URL="https://github.com/sharkdp/bat/releases/download/v${BAT_VERSION}/${BAT_DEB}"
+                        TEMP_DIR=$(mktemp -d)
+                        
+                        if curl -sL "$BAT_URL" -o "$TEMP_DIR/${BAT_DEB}"; then
+                            sudo dpkg -i "$TEMP_DIR/${BAT_DEB}" 2>/dev/null || {
+                                echo "  📦 Installing dependencies..."
+                                sudo apt-get install -f -y
+                            }
+                            rm -rf "$TEMP_DIR"
+                        else
+                            echo "  ⚠️  Failed to download bat"
+                        fi
                     fi
                 fi
-            done
+                
+                # git-delta usually requires manual installation on Debian
+                echo "  ℹ️  git-delta not in Debian repos"
+                echo "  📝 To install: https://github.com/dandavison/delta/releases"
+                
+                # lsd might not be available
+                if ! sudo apt-get install -y lsd 2>/dev/null; then
+                    echo "  ℹ️  lsd not in Debian repos"
+                    echo "  📝 To install: https://github.com/lsd-rs/lsd/releases"
+                fi
+                
+            elif [[ "$LINUX_DISTRO" == "ubuntu" ]]; then
+                echo "  ℹ️  Installing tools for Ubuntu..."
+                
+                # Install available tools, continue if some fail
+                for tool in bat ripgrep fd-find git-delta lsd; do
+                    if ! sudo apt-get install -y "$tool" 2>/dev/null; then
+                        # Try snap as fallback
+                        if command -v snap &> /dev/null; then
+                            case "$tool" in
+                                bat) sudo snap install batcat --classic && sudo snap alias batcat bat ;;
+                                ripgrep) sudo snap install ripgrep --classic ;;
+                                fd-find) sudo snap install fd --classic ;;
+                                git-delta) echo "  ℹ️  git-delta not available in snap" ;;
+                                lsd) sudo snap install lsd --classic ;;
+                            esac || echo "  ⚠️  $tool not available in apt or snap"
+                        else
+                            echo "  ⚠️  $tool not available in apt"
+                        fi
+                    fi
+                done
+            else
+                # Generic apt-based system
+                for tool in bat ripgrep fd-find git-delta lsd; do
+                    sudo apt-get install -y "$tool" 2>/dev/null || echo "  ⚠️  $tool not available"
+                done
+            fi
             ;;
         dnf)
             for tool in bat ripgrep fd-find git-delta lsd; do
@@ -304,5 +449,18 @@ case "$OS_TYPE" in
     linux)
         echo "💡 Linux notes:"
         echo "- You may need to select JetBrainsMono Nerd Font in your terminal emulator"
+        
+        if [[ "$LINUX_DISTRO" == "debian" ]]; then
+            echo ""
+            echo "📝 Debian-specific notes:"
+            echo "- Nushell was installed to ~/.local/bin/nu (ensure PATH includes ~/.local/bin)"
+            echo "- Some tools (bat, git-delta, lsd) may need manual installation"
+            echo "- Visit the links provided above for manual installation instructions"
+        elif [[ "$LINUX_DISTRO" == "ubuntu" ]]; then
+            echo ""
+            echo "📝 Ubuntu-specific notes:"
+            echo "- Snap packages are used for some tools when apt packages aren't available"
+            echo "- If snap is not installed, some tools may require manual installation"
+        fi
         ;;
 esac
