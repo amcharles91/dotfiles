@@ -1,6 +1,6 @@
 #!/bin/bash
 # Simplified installation script for chezmoi dotfiles
-set -euo pipefail
+set -uo pipefail  # Remove -e to continue on errors
 
 echo "🚀 Setting up development environment..."
 
@@ -59,8 +59,11 @@ if ! command -v nu &> /dev/null; then
     
     case "$PKG_MGR" in
         apt)
-            sudo apt-get update -qq
-            sudo apt-get install -y nushell
+            # Nushell requires adding a PPA or manual install
+            if ! command -v nu &> /dev/null; then
+                echo "  ℹ️  Nushell not in default apt repos"
+                echo "  📝 To install: https://www.nushell.sh/book/installation.html#ubuntu-debian"
+            fi
             ;;
         dnf)
             sudo dnf install -y nushell
@@ -88,7 +91,9 @@ if [[ "$OS_TYPE" != "windows" ]] && ! command -v fish &> /dev/null; then
     
     case "$PKG_MGR" in
         apt)
-            sudo apt-get install -y fish
+            # Fish is in universe repository
+            sudo apt-get update -qq
+            sudo apt-get install -y fish || echo "  ⚠️  Fish not available, may need 'sudo add-apt-repository universe'"
             ;;
         dnf)
             sudo dnf install -y fish
