@@ -158,7 +158,10 @@ install_nerd_font() {
                 xargs -I {} cp {} "$FONT_DIR/"
             
             # Update font cache
-            [[ "$OS_TYPE" == "linux" ]] && fc-cache -f
+            if [[ "$OS_TYPE" == "linux" ]]; then
+                fc-cache -f
+                echo "  Font cache updated"
+            fi
             
             rm -rf "$TEMP_DIR"
             echo "✅ JetBrains Mono Nerd Font installed"
@@ -256,6 +259,22 @@ if command -v nu &> /dev/null && command -v starship &> /dev/null; then
     starship init nu > "$NU_DATA_DIR/vendor/autoload/starship.nu"
     
     echo "✅ Starship configured for Nushell"
+fi
+
+# Create convenience aliases for tools with different names
+if [[ "$PKG_MGR" == "apt" ]]; then
+    echo "📝 Setting up command aliases..."
+    
+    # Create local bin directory if it doesn't exist
+    mkdir -p "$HOME/.local/bin"
+    
+    # Create fd alias for fd-find
+    if command -v fd-find &> /dev/null && ! command -v fd &> /dev/null; then
+        ln -sf $(which fd-find) "$HOME/.local/bin/fd"
+        echo "  Created alias: fd -> fd-find"
+    fi
+    
+    # batcat is already handled by the package itself on newer Ubuntu
 fi
 
 echo "✨ Installation complete!"
