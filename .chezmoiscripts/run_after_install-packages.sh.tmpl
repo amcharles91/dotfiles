@@ -274,6 +274,12 @@ if [[ "$PKG_MGR" == "apt" ]]; then
         echo "  Created alias: fd -> fd-find"
     fi
     
+    # Create nu alias for nushell if installed via snap
+    if snap list 2>/dev/null | grep -q nushell && ! command -v nu &> /dev/null; then
+        ln -sf /snap/bin/nu "$HOME/.local/bin/nu"
+        echo "  Created alias: nu -> /snap/bin/nu"
+    fi
+    
     # batcat is already handled by the package itself on newer Ubuntu
 fi
 

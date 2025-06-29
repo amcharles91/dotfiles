@@ -2,6 +2,7 @@
 {{- $email := promptStringOnce . "email" "Your email address" -}}
 {{- $githubUser := promptStringOnce . "githubUser" "Your GitHub username" -}}
 {{- $editor := promptStringOnce . "editor" "Your preferred editor (vim/nvim/code/nano)" "nano" -}}
+{{- $defaultShell := promptStringOnce . "defaultShell" "Your preferred default shell (bash/zsh/fish/nu)" "bash" -}}
 
 {{- $isWSL := false -}}
 {{- if eq .chezmoi.os "linux" -}}
@@ -24,6 +25,7 @@
     email = {{ $email | quote }}
     githubUser = {{ $githubUser | quote }}
     editor = {{ $editor | quote }}
+    defaultShell = {{ $defaultShell | quote }}
     isWSL = {{ $isWSL }}
     osid = {{ $osid | quote }}
 
