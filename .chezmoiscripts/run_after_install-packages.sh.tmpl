@@ -130,6 +130,17 @@ install_nerd_font() {
                 return
             fi
             
+            # Ensure unzip is available
+            if ! command -v unzip &> /dev/null; then
+                echo "  📦 Installing unzip..."
+                case "$PKG_MGR" in
+                    apt) sudo apt-get install -y unzip ;;
+                    dnf) sudo dnf install -y unzip ;;
+                    pacman) sudo pacman -S --noconfirm unzip ;;
+                    brew) brew install unzip ;;
+                esac
+            fi
+            
             # Download and install
             local FONT_DIR="$HOME/.local/share/fonts"
             [[ "$OS_TYPE" == "macos" ]] && FONT_DIR="$HOME/Library/Fonts"
