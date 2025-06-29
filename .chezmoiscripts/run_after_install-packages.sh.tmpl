@@ -242,14 +242,27 @@ if [[ "$PKG_MGR" != "none" ]] && [[ "$PKG_MGR" != "winget" ]]; then
     install_cli_tools
 fi
 
+# Configure Starship for Nushell if it's installed
+if command -v nu &> /dev/null && command -v starship &> /dev/null; then
+    echo "🚀 Configuring Starship for Nushell..."
+    
+    # Get Nushell data directory
+    NU_DATA_DIR=$(nu -c 'echo $nu.data-dir')
+    
+    # Create vendor/autoload directory
+    mkdir -p "$NU_DATA_DIR/vendor/autoload"
+    
+    # Generate Starship init script for Nushell
+    starship init nu > "$NU_DATA_DIR/vendor/autoload/starship.nu"
+    
+    echo "✅ Starship configured for Nushell"
+fi
+
 echo "✨ Installation complete!"
 echo ""
 echo "📝 Next steps:"
 echo "1. Run 'chezmoi apply' to apply the configuration"
-echo "2. For Nushell, run these commands once after first launch:"
-echo '   mkdir ($nu.data-dir | path join "vendor/autoload")'
-echo '   starship init nu | save -f ($nu.data-dir | path join "vendor/autoload/starship.nu")'
-echo "3. Restart your terminal or source your shell config"
+echo "2. Restart your terminal or source your shell config"
 echo ""
 
 # OS-specific notes

@@ -81,11 +81,28 @@ check_command "nu" false
 check_command "pwsh" false
 
 # Modern CLI tools
-check_command "bat" false
+# Check for bat (might be batcat on some systems)
+if command -v bat &> /dev/null; then
+    check_command "bat" false
+elif command -v batcat &> /dev/null; then
+    echo -e "${GREEN}✓${NC} bat is installed (as batcat)"
+else
+    echo -e "${YELLOW}⚠${NC} bat is NOT installed (optional)"
+fi
+
 check_command "rg" false
-check_command "fd" false
+
+# Check for fd (might be fd-find on some systems)
+if command -v fd &> /dev/null; then
+    check_command "fd" false
+elif command -v fd-find &> /dev/null; then
+    echo -e "${GREEN}✓${NC} fd is installed (as fd-find)"
+else
+    echo -e "${YELLOW}⚠${NC} fd is NOT installed (optional)"
+fi
+
 check_command "lsd" false
-check_command "exa" false
+check_command "eza" false  # exa is deprecated, replaced by eza
 check_command "delta" false
 
 echo ""
