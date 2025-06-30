@@ -13,6 +13,109 @@ NC='\033[0m' # No Color
 
 echo -e "${BLUE}=== Checking Essential Tools ===${NC}\n"
 
+# Check for C compiler (required for building Rust packages)
+if ! command -v cc &> /dev/null && ! command -v gcc &> /dev/null; then
+    echo -e "${YELLOW}C compiler not found!${NC}"
+    echo "A C compiler is required to build some Rust packages from source."
+    echo ""
+    
+    # Detect OS and provide appropriate install command
+    if command -v apt-get &> /dev/null; then
+        # Debian/Ubuntu
+        echo "Install with: sudo apt update && sudo apt install -y build-essential"
+        read -p "Run this command now? (y/N) " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            sudo apt update && sudo apt install -y build-essential
+            echo -e "${GREEN}✓ Build tools installed!${NC}"
+        fi
+    elif command -v dnf &> /dev/null; then
+        # Fedora
+        echo "Install with: sudo dnf groupinstall -y 'Development Tools'"
+        read -p "Run this command now? (y/N) " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            sudo dnf groupinstall -y 'Development Tools'
+            echo -e "${GREEN}✓ Build tools installed!${NC}"
+        fi
+    elif command -v yum &> /dev/null; then
+        # RHEL/CentOS
+        echo "Install with: sudo yum groupinstall -y 'Development Tools'"
+        read -p "Run this command now? (y/N) " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            sudo yum groupinstall -y 'Development Tools'
+            echo -e "${GREEN}✓ Build tools installed!${NC}"
+        fi
+    elif command -v pacman &> /dev/null; then
+        # Arch
+        echo "Install with: sudo pacman -S --needed base-devel"
+        read -p "Run this command now? (y/N) " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            sudo pacman -S --needed base-devel
+            echo -e "${GREEN}✓ Build tools installed!${NC}"
+        fi
+    elif command -v zypper &> /dev/null; then
+        # openSUSE
+        echo "Install with: sudo zypper install -t pattern devel_basis"
+        read -p "Run this command now? (y/N) " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            sudo zypper install -t pattern devel_basis
+            echo -e "${GREEN}✓ Build tools installed!${NC}"
+        fi
+    elif command -v apk &> /dev/null; then
+        # Alpine
+        echo "Install with: sudo apk add build-base"
+        read -p "Run this command now? (y/N) " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            sudo apk add build-base
+            echo -e "${GREEN}✓ Build tools installed!${NC}"
+        fi
+    else
+        echo -e "${YELLOW}Please install a C compiler (gcc or clang) and development tools for your system.${NC}"
+    fi
+else
+    echo -e "${GREEN}✓ C compiler already installed${NC}"
+fi
+
+# Check for pkg-config (often required for Rust packages)
+if ! command -v pkg-config &> /dev/null; then
+    echo -e "\n${YELLOW}pkg-config not found!${NC}"
+    echo "Some Rust packages require pkg-config for finding system libraries."
+    echo ""
+    
+    if command -v apt-get &> /dev/null; then
+        echo "Install with: sudo apt install -y pkg-config"
+        read -p "Run this command now? (y/N) " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            sudo apt install -y pkg-config
+            echo -e "${GREEN}✓ pkg-config installed!${NC}"
+        fi
+    elif command -v dnf &> /dev/null; then
+        echo "Install with: sudo dnf install -y pkgconfig"
+        read -p "Run this command now? (y/N) " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            sudo dnf install -y pkgconfig
+            echo -e "${GREEN}✓ pkg-config installed!${NC}"
+        fi
+    elif command -v pacman &> /dev/null; then
+        echo "Install with: sudo pacman -S --needed pkgconf"
+        read -p "Run this command now? (y/N) " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            sudo pacman -S --needed pkgconf
+            echo -e "${GREEN}✓ pkg-config installed!${NC}"
+        fi
+    fi
+else
+    echo -e "${GREEN}✓ pkg-config already installed${NC}"
+fi
+
 # Check and install Rust/Cargo
 if ! command -v cargo &> /dev/null; then
     echo -e "${YELLOW}Rust/Cargo not found!${NC}"
