@@ -1,6 +1,6 @@
 {{- /* Common PATH additions for Nushell */ -}}
 # Additional PATH configuration
-let mut path_additions = []
+mut path_additions = []
 
 {{- /* Cargo/Rust */ -}}
 {{- if stat (joinPath .chezmoi.homeDir ".cargo/bin") -}}
