@@ -1,0 +1,26 @@
+{{- /* Rust/Cargo Setup with Optional Installation */ -}}
+{{- if not (lookPath "cargo") -}}
+{{-   if stdinIsATTY -}}
+# Rust/Cargo not found!
+# Rust is needed for many modern CLI tools (ripgrep, bat, eza, fnm, etc.)
+# 
+# Would you like to install Rust now? (recommended)
+# This will download and run the official Rust installer from https://rustup.rs
+#
+{{-     $installRust := promptBoolOnce . "installRust" "Install Rust/Cargo now" -}}
+{{-     if $installRust }}
+# Installing Rust...
+if command -v curl &> /dev/null; then
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    echo "Rust installed! Please restart your shell or run: source \$HOME/.cargo/env"
+else
+    echo "Error: curl is required to install Rust. Please install curl first."
+fi
+{{-     else }}
+# Skipping Rust installation. You can install it later from https://rustup.rs
+{{-     end -}}
+{{-   else -}}
+# Rust/Cargo not found. Install from https://rustup.rs
+# Non-interactive mode - skipping auto-install
+{{-   end -}}
+{{- end -}}

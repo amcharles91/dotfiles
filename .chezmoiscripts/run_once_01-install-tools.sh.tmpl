@@ -1,0 +1,65 @@
+#!/bin/bash
+# This script runs once when setting up a new system
+# It prompts to install essential tools if they're missing
+
+set -euo pipefail
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+echo -e "${BLUE}=== Checking Essential Tools ===${NC}\n"
+
+# Check and install Rust/Cargo
+if ! command -v cargo &> /dev/null; then
+    echo -e "${YELLOW}Rust/Cargo not found!${NC}"
+    echo "Rust is needed for many modern CLI tools (ripgrep, bat, eza, fnm, etc.)"
+    echo ""
+    read -p "Install Rust now? (y/N) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo -e "${GREEN}Installing Rust...${NC}"
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+        source "$HOME/.cargo/env"
+        echo -e "${GREEN}✓ Rust installed!${NC}"
+    else
+        echo -e "${YELLOW}Skipping Rust installation${NC}"
+    fi
+else
+    echo -e "${GREEN}✓ Rust/Cargo already installed${NC}"
+fi
+
+# Check cargo-binstall
+if command -v cargo &> /dev/null && ! command -v cargo-binstall &> /dev/null; then
+    echo -e "\n${YELLOW}cargo-binstall not found!${NC}"
+    echo "This tool enables fast binary installations instead of compiling from source."
+    echo ""
+    read -p "Install cargo-binstall? (y/N) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo -e "${GREEN}Installing cargo-binstall...${NC}"
+        cargo install cargo-binstall
+        echo -e "${GREEN}✓ cargo-binstall installed!${NC}"
+    fi
+else
+    [[ -x "$(command -v cargo-binstall)" ]] && echo -e "${GREEN}✓ cargo-binstall already installed${NC}"
+fi
+
+# Run install-cargo-tools if it exists and user wants to
+if [[ -x "$HOME/.local/bin/install-cargo-tools" ]] && command -v cargo &> /dev/null; then
+    echo -e "\n${BLUE}Ready to install recommended cargo tools${NC}"
+    echo "Tools include: fnm, ripgrep, bat, eza, fd, and more"
+    echo ""
+    read -p "Run install-cargo-tools now? (y/N) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        "$HOME/.local/bin/install-cargo-tools"
+    else
+        echo -e "${YELLOW}You can run 'install-cargo-tools' anytime to install recommended tools${NC}"
+    fi
+fi
+
+echo -e "\n${GREEN}Tool check complete!${NC}"

@@ -26,6 +26,9 @@ $env.PATH = ($env.PATH | split row (char esep) | prepend $"($env.HOME)/.local/bi
 # Snap binary path
 {{- template "snap-path" . }}
 
+# Rust/Cargo setup (with optional installation)
+{{- template "rust-setup" . }}
+
 # Cargo tools status check
 {{- template "cargo-tools" . }}
 

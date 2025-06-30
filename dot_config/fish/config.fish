@@ -9,6 +9,9 @@ fish_add_path -p $HOME/.local/bin
 # Snap binary path
 {{- template "snap-path" . }}
 
+# Rust/Cargo setup (with optional installation)
+{{- template "rust-setup" . }}
+
 # Cargo tools status check
 {{- template "cargo-tools" . }}
 
