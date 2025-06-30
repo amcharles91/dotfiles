@@ -1,6 +1,5 @@
 {{- /* Common PATH additions */ -}}
-# Include helper functions
-{{- template "path-helpers" . }}
+# PATH additions - requires path-helpers to be included before this template
 
 {{- /* Cargo/Rust */ -}}
 {{- if stat (joinPath .chezmoi.homeDir ".cargo/bin") -}}
@@ -32,9 +31,11 @@ path_prepend "$HOME/.bun/bin"
 # Games
 path_append "/usr/games"
   {{- end }}
+
   {{- if stat "/usr/local/games" -}}
 path_append "/usr/local/games"
   {{- end }}
+
 {{- end }}
 
 {{- /* System administration paths (Debian/Ubuntu) */ -}}
@@ -43,9 +44,11 @@ path_append "/usr/local/games"
 # System administration binaries
 path_append "/usr/sbin"
   {{- end }}
+
   {{- if stat "/usr/local/sbin" -}}
 path_append "/usr/local/sbin"
   {{- end }}
+
 {{- end }}
 
 {{- /* Flatpak paths (common on Ubuntu) */ -}}
@@ -63,5 +66,6 @@ path_append "/usr/lib/wsl/lib"
 # Export the final PATH
 export PATH
 
-# Clean up helper functions
-unset -f path_prepend path_append
+# Clean up helper functions (if they exist)
+command -v path_prepend &> /dev/null && unset -f path_prepend
+command -v path_append &> /dev/null && unset -f path_append

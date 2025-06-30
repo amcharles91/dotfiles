@@ -60,14 +60,14 @@ fi
 # Additional PATH entries
 {{- template "path-additions" . }}
 
-# Snap binary path  
+# Snap binary path
 {{- template "snap-path-simple" . }}
 
 # Rust/Cargo setup (with optional installation)
 {{- template "rust-setup" . }}
 
-# Cargo tools status check
-{{- template "cargo-tools" . }}
+# Cargo tools
+{{- template "cargo-tools-simple" . }}
 
 # fnm (Node version manager) setup
 {{- template "fnm-setup" . }}

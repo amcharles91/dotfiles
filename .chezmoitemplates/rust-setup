@@ -1,8 +1,7 @@
-{{- /* Rust/Cargo Setup with Optional Installation */ -}}
-{{- if not (lookPath "cargo") -}}
-# Rust/Cargo not found!
-# Rust is needed for many modern CLI tools (ripgrep, bat, eza, fnm, etc.)
-# 
-# Install Rust from: https://rustup.rs
-# Or run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+{{- /* Rust/Cargo Setup */ -}}
+{{- if lookPath "cargo" -}}
+# Rust/Cargo environment
+if [ -f "$HOME/.cargo/env" ]; then
+    . "$HOME/.cargo/env"
+fi
 {{- end -}}

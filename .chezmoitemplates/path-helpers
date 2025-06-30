@@ -1,5 +1,6 @@
 {{- /* PATH helper functions for Bash/Zsh with security checks */ -}}
 # Helper function to add paths without duplication
+if ! command -v path_prepend &> /dev/null; then
 path_prepend() {
     if [ -z "$1" ]; then
         return 1
@@ -16,7 +17,9 @@ path_prepend() {
         fi
     fi
 }
+fi
 
+if ! command -v path_append &> /dev/null; then
 path_append() {
     if [ -z "$1" ]; then
         return 1
@@ -33,3 +36,4 @@ path_append() {
         fi
     fi
 }
+fi

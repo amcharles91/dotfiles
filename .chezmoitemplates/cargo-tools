@@ -13,8 +13,8 @@
 # ✗ cargo-binstall missing - run: cargo install cargo-binstall
 {{- end }}
 
-{{- if lookPath "cargo-install-update" }}
-# ✓ cargo-update installed
+{{- if lookPath "cargo-update" }}
+# ✓ cargo-update installed  
 {{- else }}
 # ✗ cargo-update missing - run: cargo install cargo-update
 {{- end }}

@@ -1,0 +1,2 @@
+{{- /* Cargo Tools - Simple version without status comments */ -}}
+# Cargo tools are managed via install-cargo-tools script
