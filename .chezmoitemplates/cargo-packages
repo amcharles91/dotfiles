@@ -1,24 +1,14 @@
 {{- /* List of cargo packages to install */ -}}
-# Cargo packages list - add new tools here
-# This is sourced by install-cargo-tools script
-
-CARGO_TOOLS=(
-    # Core tools
-    fnm              # Fast Node Manager - better than nvm for cross-shell
-    cargo-binstall   # Install pre-built binaries when available
-    cargo-update     # Update all cargo-installed packages
-    
-    # Better Unix tools
-    ripgrep          # rg - faster grep
-    bat              # Better cat with syntax highlighting
-    eza              # Better ls with colors and git status
-    fd               # Better find
-    
-    # Development tools (uncomment if needed)
-    # tokei          # Count lines of code
-    # hyperfine      # Command-line benchmarking
-    # just           # Modern make alternative
-    # watchexec      # Run commands on file changes
-    
-    # Add new tools below this line
-)
+# Cargo packages list
+# To modify the list, edit: ~/.local/bin/install-cargo-tools
+# 
+# Currently installed tools:
+# - fnm: Fast Node Manager
+# - cargo-binstall: Install pre-built binaries
+# - cargo-update: Update all cargo packages
+# - ripgrep: Better grep (rg)
+# - bat: Better cat with syntax highlighting
+# - eza: Better ls with colors
+# - fd: Better find
+#
+# To add new tools, edit the CARGO_TOOLS array in install-cargo-tools

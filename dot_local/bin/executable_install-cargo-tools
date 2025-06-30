@@ -10,16 +10,25 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Load the packages list
-PACKAGES_FILE="${CHEZMOI_SOURCE_DIR:-$HOME/.local/share/chezmoi}/.chezmoitemplates/cargo-packages"
-
-if [[ ! -f "$PACKAGES_FILE" ]]; then
-    echo -e "${RED}Error: Cannot find cargo-packages file at $PACKAGES_FILE${NC}"
-    exit 1
-fi
-
-# Source the packages list
-source "$PACKAGES_FILE"
+# Define the cargo tools to install
+CARGO_TOOLS=(
+    # Core tools
+    fnm              # Fast Node Manager - better than nvm for cross-shell
+    cargo-binstall   # Install pre-built binaries when available
+    cargo-update     # Update all cargo-installed packages
+    
+    # Better Unix tools
+    ripgrep          # rg - faster grep
+    bat              # Better cat with syntax highlighting
+    eza              # Better ls with colors and git status
+    fd               # Better find
+    
+    # Development tools (uncomment if needed)
+    # tokei          # Count lines of code
+    # hyperfine      # Command-line benchmarking
+    # just           # Modern make alternative
+    # watchexec      # Run commands on file changes
+)
 
 # Check if cargo is installed
 if ! command -v cargo &> /dev/null; then
