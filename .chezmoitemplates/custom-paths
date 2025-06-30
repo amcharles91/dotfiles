@@ -6,7 +6,7 @@ if ! type path_prepend &>/dev/null; then
 {{- template "path-helpers" . | indent 4 }}
 fi
 
-  {{- range $line := file $customPathsFile | splitList "\n" -}}
+  {{- range $line := include $customPathsFile | splitList "\n" -}}
     {{- $trimmedLine := trim $line -}}
     {{- if and $trimmedLine (not (hasPrefix "#" $trimmedLine)) -}}
       {{- $pathStat := stat $trimmedLine -}}

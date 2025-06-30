@@ -3,7 +3,7 @@
 {{- if stat $customPathsFile -}}
 # Custom user-defined paths
 mut custom_paths = []
-  {{- range $line := file $customPathsFile | splitList "\n" -}}
+  {{- range $line := include $customPathsFile | splitList "\n" -}}
     {{- $trimmedLine := trim $line -}}
     {{- if and $trimmedLine (not (hasPrefix "#" $trimmedLine)) -}}
       {{- $pathStat := stat $trimmedLine -}}

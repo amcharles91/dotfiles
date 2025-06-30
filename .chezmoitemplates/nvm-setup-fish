@@ -20,13 +20,17 @@ fish_add_path -p $HOME/.nvm/versions/node/{{ $defaultVersion }}/bin
   {{- /* No default set, fall back to latest installed version */ -}}
   {{- $nodeVersionsDir := joinPath $nvmDir "versions/node" -}}
   {{- if stat $nodeVersionsDir -}}
-    {{- $nodeDirs := readDir $nodeVersionsDir -}}
-    {{- if $nodeDirs -}}
-      {{- /* Get the latest version by sorting */ -}}
+    {{- /* Use glob to get all directories in the node versions directory */ -}}
+    {{- $nodeVersionsPattern := joinPath $nodeVersionsDir "*" -}}
+    {{- $nodePaths := glob $nodeVersionsPattern -}}
+    {{- if $nodePaths -}}
+      {{- /* Extract version names from paths and filter for directories */ -}}
       {{- $sortedVersions := list -}}
-      {{- range $nodeDir := $nodeDirs -}}
-        {{- if $nodeDir.IsDir -}}
-          {{- $sortedVersions = append $sortedVersions $nodeDir.Name -}}
+      {{- range $nodePath := $nodePaths -}}
+        {{- $pathStat := stat $nodePath -}}
+        {{- if $pathStat.IsDir -}}
+          {{- $versionName := base $nodePath -}}
+          {{- $sortedVersions = append $sortedVersions $versionName -}}
         {{- end -}}
       {{- end -}}
       {{- if $sortedVersions -}}
