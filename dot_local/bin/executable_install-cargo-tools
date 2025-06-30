@@ -1,0 +1,70 @@
+#!/bin/bash
+# Install cargo tools from the cargo-packages list
+# This script uses cargo-binstall when available for faster installs
+
+set -euo pipefail
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Load the packages list
+PACKAGES_FILE="${CHEZMOI_SOURCE_DIR:-$HOME/.local/share/chezmoi}/.chezmoitemplates/cargo-packages"
+
+if [[ ! -f "$PACKAGES_FILE" ]]; then
+    echo -e "${RED}Error: Cannot find cargo-packages file at $PACKAGES_FILE${NC}"
+    exit 1
+fi
+
+# Source the packages list
+source "$PACKAGES_FILE"
+
+# Check if cargo is installed
+if ! command -v cargo &> /dev/null; then
+    echo -e "${RED}Error: cargo is not installed. Please install Rust from https://rustup.rs${NC}"
+    exit 1
+fi
+
+# Check if cargo-binstall is available
+HAS_BINSTALL=false
+if command -v cargo-binstall &> /dev/null; then
+    HAS_BINSTALL=true
+    echo -e "${GREEN}✓ cargo-binstall found - will use for faster installs${NC}"
+else
+    echo -e "${YELLOW}! cargo-binstall not found - will compile from source${NC}"
+    echo -e "${YELLOW}  Install it with: cargo install cargo-binstall${NC}"
+fi
+
+echo -e "\n${GREEN}Installing/updating cargo tools...${NC}\n"
+
+# Install each tool
+for tool in "${CARGO_TOOLS[@]}"; do
+    # Skip comments and empty lines
+    [[ "$tool" =~ ^#.*$ ]] && continue
+    [[ -z "$tool" ]] && continue
+    
+    echo -e "Checking ${YELLOW}$tool${NC}..."
+    
+    if command -v "$tool" &> /dev/null; then
+        echo -e "  ${GREEN}✓${NC} Already installed"
+    else
+        echo -e "  Installing $tool..."
+        if $HAS_BINSTALL; then
+            if cargo binstall -y "$tool" 2>/dev/null; then
+                echo -e "  ${GREEN}✓${NC} Installed via binstall"
+            else
+                echo -e "  ${YELLOW}!${NC} Binstall failed, trying cargo install..."
+                cargo install "$tool"
+                echo -e "  ${GREEN}✓${NC} Installed from source"
+            fi
+        else
+            cargo install "$tool"
+            echo -e "  ${GREEN}✓${NC} Installed from source"
+        fi
+    fi
+done
+
+echo -e "\n${GREEN}All tools processed!${NC}"
+echo -e "\nTo update installed tools, run: ${YELLOW}cargo install-update -a${NC}"

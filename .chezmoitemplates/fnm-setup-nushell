@@ -1,0 +1,22 @@
+{{- /* fnm Setup for Nushell */ -}}
+# fnm (Fast Node Manager) setup
+{{- if lookPath "fnm" }}
+# fnm configuration for Nushell
+if not (which fnm | is-empty) {
+    # Load fnm environment
+    ^fnm env --json | from json | load-env
+    
+    # Add fnm's bin directory to PATH
+    $env.PATH = ($env.PATH | prepend ($env.FNM_MULTISHELL_PATH | path join (if $nu.os-info.name == "windows" {""} else {"bin"})))
+    
+    # Auto-switch Node version on directory change
+    $env.config.hooks.env_change.PWD = (
+        $env.config.hooks.env_change.PWD? | append {
+            condition: {|| [".nvmrc" ".node-version", "package.json"] | any {|el| $el | path exists}}
+            code: {|| ^fnm use}
+        }
+    )
+}
+{{- else }}
+# fnm not found - install with: cargo binstall fnm
+{{- end }}

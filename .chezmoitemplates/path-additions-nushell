@@ -1,6 +1,6 @@
 {{- /* Common PATH additions for Nushell */ -}}
 # Additional PATH configuration
-mut path_additions = []
+let mut path_additions = []
 
 {{- /* Cargo/Rust */ -}}
 {{- if stat (joinPath .chezmoi.homeDir ".cargo/bin") -}}
@@ -35,12 +35,6 @@ $path_additions = ($path_additions | append "/usr/games")
   {{- if stat "/usr/local/games" -}}
 $path_additions = ($path_additions | append "/usr/local/games")
   {{- end }}
-{{- end }}
-
-{{- /* Snap (Linux) */ -}}
-{{- if and (eq .chezmoi.os "linux") (stat "/snap/bin") -}}
-# Snap packages
-$path_additions = ($path_additions | append "/snap/bin")
 {{- end }}
 
 {{- /* WSL-specific Windows paths */ -}}

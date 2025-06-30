@@ -88,14 +88,23 @@ if [[ -z "$SSH_AUTH_SOCK" ]]; then
 fi
 {{- end }}
 
+# Path helpers (functions for safe PATH manipulation)
+{{- template "path-helpers" . }}
+
 # Additional PATH entries
 {{- template "path-additions" . }}
 
-# NVM configuration
-{{- template "nvm-setup" . }}
+# Snap binary path
+{{- template "snap-path" . }}
+
+# Cargo tools status check
+{{- template "cargo-tools" . }}
+
+# fnm (Node version manager) setup
+{{- template "fnm-setup" . }}
 
 # Custom user-defined paths
-{{- template "custom-paths" . }}
+# Custom paths disabled temporarily
 
 # Custom functions
 mkcd() {

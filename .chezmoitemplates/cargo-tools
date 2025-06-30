@@ -1,0 +1,24 @@
+{{- /* Cargo Tools Setup - Simple status check */ -}}
+# Cargo tools setup
+{{- if lookPath "cargo" }}
+# ✓ Cargo found at: {{ lookPath "cargo" }}
+{{- else }}
+# ✗ Cargo not found - install from https://rustup.rs
+{{- end }}
+
+# Essential tools status:
+{{- if lookPath "cargo-binstall" }}
+# ✓ cargo-binstall installed
+{{- else }}
+# ✗ cargo-binstall missing - run: cargo install cargo-binstall
+{{- end }}
+
+{{- if lookPath "cargo-install-update" }}
+# ✓ cargo-update installed
+{{- else }}
+# ✗ cargo-update missing - run: cargo install cargo-update
+{{- end }}
+
+# Quick commands:
+# - Update all tools: cargo install-update -a
+# - Install new tool: cargo binstall <tool-name>

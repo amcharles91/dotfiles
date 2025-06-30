@@ -74,8 +74,14 @@ function touch {
     }
 }
 
-# NVM configuration
-{{- template "nvm-setup-powershell" . }}
+# Snap binary path
+{{- template "snap-path" . }}
+
+# Cargo tools status check
+{{- template "cargo-tools" . }}
+
+# fnm (Node version manager) setup
+{{- template "fnm-setup-powershell" . }}
 
 # Platform specific settings
 {{- if eq .chezmoi.os "windows" }}

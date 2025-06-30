@@ -1,0 +1,8 @@
+{{- $testFile := joinPath .chezmoi.homeDir ".config/chezmoi/chezmoi.toml" -}}
+{{- if stat $testFile -}}
+File exists
+Content:
+{{- include $testFile | indent 2 }}
+{{- else -}}
+File does not exist
+{{- end -}}

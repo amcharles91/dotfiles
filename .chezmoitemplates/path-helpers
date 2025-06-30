@@ -1,13 +1,35 @@
-{{- /* PATH helper functions for Bash/Zsh */ -}}
+{{- /* PATH helper functions for Bash/Zsh with security checks */ -}}
 # Helper function to add paths without duplication
 path_prepend() {
-    if [ -d "$1" ] && [[ ":$PATH:" != *":$1:"* ]]; then
-        PATH="$1:$PATH"
+    if [ -z "$1" ]; then
+        return 1
+    fi
+    # Check directory exists and is readable
+    if [ -d "$1" ] && [ -r "$1" ]; then
+        # Security check for world-writable directories
+        if [ -n "$(find "$1" -maxdepth 0 -perm -002 2>/dev/null)" ]; then
+            echo "Warning: Skipping world-writable directory: $1" >&2
+            return 1
+        fi
+        if [[ ":$PATH:" != *":$1:"* ]]; then
+            PATH="$1:$PATH"
+        fi
     fi
 }
 
 path_append() {
-    if [ -d "$1" ] && [[ ":$PATH:" != *":$1:"* ]]; then
-        PATH="$PATH:$1"
+    if [ -z "$1" ]; then
+        return 1
+    fi
+    # Check directory exists and is readable
+    if [ -d "$1" ] && [ -r "$1" ]; then
+        # Security check for world-writable directories
+        if [ -n "$(find "$1" -maxdepth 0 -perm -002 2>/dev/null)" ]; then
+            echo "Warning: Skipping world-writable directory: $1" >&2
+            return 1
+        fi
+        if [[ ":$PATH:" != *":$1:"* ]]; then
+            PATH="$PATH:$1"
+        fi
     fi
 }

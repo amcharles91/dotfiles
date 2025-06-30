@@ -34,12 +34,6 @@ fish_add_path -a /usr/local/games
   {{- end }}
 {{- end }}
 
-{{- /* Snap (Linux) */ -}}
-{{- if and (eq .chezmoi.os "linux") (stat "/snap/bin") -}}
-# Snap packages
-fish_add_path -a /snap/bin
-{{- end }}
-
 {{- /* WSL-specific Windows paths */ -}}
 {{- if .isWSL -}}
 # WSL lib

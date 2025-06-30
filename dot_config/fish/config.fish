@@ -6,10 +6,17 @@ fish_add_path -p $HOME/.local/bin
 # Additional PATH entries
 {{- template "path-additions-fish" . }}
 
-{{- template "nvm-setup-fish" . }}
+# Snap binary path
+{{- template "snap-path" . }}
+
+# Cargo tools status check
+{{- template "cargo-tools" . }}
+
+# fnm (Node version manager) setup
+{{- template "fnm-setup-fish" . }}
 
 # Custom user-defined paths
-{{- template "custom-paths-fish" . }}
+# Custom paths disabled temporarily
 
 # Initialize Starship
 if status is-interactive

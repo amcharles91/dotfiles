@@ -1,0 +1,7 @@
+{{- /* fnm Setup for Bash/Zsh */ -}}
+# fnm (Fast Node Manager) setup
+{{- if lookPath "fnm" }}
+eval "$(fnm env --use-on-cd)"
+{{- else }}
+# fnm not found - install with: cargo binstall fnm
+{{- end }}

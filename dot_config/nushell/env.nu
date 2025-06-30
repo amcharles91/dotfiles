@@ -23,7 +23,14 @@ $env.PATH = ($env.PATH | split row (char esep) | prepend $"($env.HOME)/.local/bi
 # Additional PATH entries
 {{- template "path-additions-nushell" . }}
 
-{{- template "nvm-setup-nushell" . }}
+# Snap binary path
+{{- template "snap-path" . }}
+
+# Cargo tools status check
+{{- template "cargo-tools" . }}
+
+# fnm (Node version manager) setup
+{{- template "fnm-setup-nushell" . }}
 
 # Custom user-defined paths
-{{- template "custom-paths-nushell" . }}
+# Custom paths disabled temporarily

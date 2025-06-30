@@ -37,10 +37,21 @@ path_append "/usr/local/games"
   {{- end }}
 {{- end }}
 
-{{- /* Snap (Linux) */ -}}
-{{- if and (eq .chezmoi.os "linux") (stat "/snap/bin") -}}
-# Snap packages
-path_append "/snap/bin"
+{{- /* System administration paths (Debian/Ubuntu) */ -}}
+{{- if eq .chezmoi.os "linux" -}}
+  {{- if stat "/usr/sbin" -}}
+# System administration binaries
+path_append "/usr/sbin"
+  {{- end }}
+  {{- if stat "/usr/local/sbin" -}}
+path_append "/usr/local/sbin"
+  {{- end }}
+{{- end }}
+
+{{- /* Flatpak paths (common on Ubuntu) */ -}}
+{{- if and (eq .chezmoi.os "linux") (stat (joinPath .chezmoi.homeDir ".local/share/flatpak/exports/bin")) -}}
+# Flatpak applications
+path_append "$HOME/.local/share/flatpak/exports/bin"
 {{- end }}
 
 {{- /* WSL-specific Windows paths */ -}}

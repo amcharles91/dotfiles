@@ -1,0 +1,5 @@
+{{- /* Snap PATH - Simple conditional version */ -}}
+{{- if and (eq .chezmoi.os "linux") (stat "/snap/bin") -}}
+# Snap binaries (if directory exists)
+export PATH="$PATH:/snap/bin"
+{{- end -}}

@@ -1,0 +1,8 @@
+{{- /* Check for system-installed Node.js */ -}}
+{{- if lookPath "node" -}}
+# Node.js is already available system-wide (via apt, snap, or other)
+# Current version: $(node --version 2>/dev/null || echo "unknown")
+{{- else -}}
+# Node.js not found in PATH
+# Install with: sudo apt install nodejs npm
+{{- end -}}

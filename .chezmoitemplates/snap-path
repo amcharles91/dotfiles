@@ -1,0 +1,23 @@
+{{- /* Snap PATH Setup - Conditional and distro-aware */ -}}
+{{- if eq .chezmoi.os "linux" -}}
+  {{- /* Check if snap is actually installed */ -}}
+  {{- if and (lookPath "snap") (stat "/snap/bin") -}}
+    {{- if or (eq .chezmoi.shell "bash") (eq .chezmoi.shell "zsh") -}}
+# Snap binary path (snap is installed)
+path_append "/snap/bin"
+    {{- else if eq .chezmoi.shell "fish" -}}
+# Snap binary path (snap is installed)
+fish_add_path -a /snap/bin
+    {{- else if eq .chezmoi.shell "nushell" -}}
+# Snap binary path (snap is installed)
+$path_additions = ($path_additions | append "/snap/bin")
+    {{- else if eq .chezmoi.shell "powershell" -}}
+# Snap binary path (snap is installed)
+if (Test-Path -Path "/snap/bin" -PathType Container -ErrorAction SilentlyContinue) {
+    if (-not ($env:PATH -split ':' | Where-Object {$_ -eq "/snap/bin"})) {
+        $env:PATH = "$env:PATH:/snap/bin"
+    }
+}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}

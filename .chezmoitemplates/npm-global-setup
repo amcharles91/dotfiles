@@ -1,0 +1,14 @@
+{{- /* NPM Global Package Setup */ -}}
+# Configure npm to use ~/.npm-global for global packages (no sudo needed)
+# This only needs to be run once, npm remembers the setting
+
+# Create directory if it doesn't exist
+mkdir -p ~/.npm-global
+
+# Tell npm to use this directory for global installs
+npm config set prefix '~/.npm-global'
+
+# Now you can install global packages without sudo:
+# npm install -g <package>
+
+# The PATH addition for ~/.npm-global/bin is already in our path-additions template
