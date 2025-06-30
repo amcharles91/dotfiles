@@ -74,6 +74,9 @@ function touch {
     }
 }
 
+# NVM configuration
+{{- template "nvm-setup-powershell" . }}
+
 # Platform specific settings
 {{- if eq .chezmoi.os "windows" }}
 # Windows specific aliases

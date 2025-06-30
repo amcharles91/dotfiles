@@ -1,0 +1,53 @@
+{{- /* Common PATH additions for Nushell */ -}}
+# Additional PATH configuration
+mut path_additions = []
+
+{{- /* Cargo/Rust */ -}}
+{{- if stat (joinPath .chezmoi.homeDir ".cargo/bin") -}}
+# Rust/Cargo
+$path_additions = ($path_additions | append $"($env.HOME)/.cargo/bin")
+{{- end }}
+
+{{- /* NPM global packages */ -}}
+{{- if stat (joinPath .chezmoi.homeDir ".npm-global/bin") -}}
+# NPM global packages
+$path_additions = ($path_additions | append $"($env.HOME)/.npm-global/bin")
+{{- end }}
+
+{{- /* Go */ -}}
+{{- if stat (joinPath .chezmoi.homeDir "go/bin") -}}
+# Go binaries
+$path_additions = ($path_additions | append $"($env.HOME)/go/bin")
+{{- end }}
+
+{{- /* Bun */ -}}
+{{- if stat (joinPath .chezmoi.homeDir ".bun/bin") -}}
+# Bun
+$path_additions = ($path_additions | append $"($env.HOME)/.bun/bin")
+{{- end }}
+
+{{- /* Games directories (Linux) */ -}}
+{{- if eq .chezmoi.os "linux" -}}
+  {{- if stat "/usr/games" -}}
+# Games
+$path_additions = ($path_additions | append "/usr/games")
+  {{- end }}
+  {{- if stat "/usr/local/games" -}}
+$path_additions = ($path_additions | append "/usr/local/games")
+  {{- end }}
+{{- end }}
+
+{{- /* Snap (Linux) */ -}}
+{{- if and (eq .chezmoi.os "linux") (stat "/snap/bin") -}}
+# Snap packages
+$path_additions = ($path_additions | append "/snap/bin")
+{{- end }}
+
+{{- /* WSL-specific Windows paths */ -}}
+{{- if .isWSL -}}
+# WSL lib
+$path_additions = ($path_additions | append "/usr/lib/wsl/lib")
+{{- end }}
+
+# Add all paths to PATH (prepend for higher priority)
+$env.PATH = ($path_additions | append ($env.PATH | split row (char esep)) | uniq)

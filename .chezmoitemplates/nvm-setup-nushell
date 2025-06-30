@@ -1,0 +1,48 @@
+{{- /* NVM Setup for Nushell */ -}}
+{{- $nvmDir := joinPath .chezmoi.homeDir ".nvm" -}}
+{{- if stat $nvmDir -}}
+# NVM configuration
+$env.NVM_DIR = $"($env.HOME)/.nvm"
+
+{{- /* Check for NVM's default alias first */ -}}
+{{- $defaultAlias := joinPath $nvmDir "alias/default" -}}
+{{- if stat $defaultAlias -}}
+  {{- $defaultVersion := include $defaultAlias | trim -}}
+  {{- if $defaultVersion -}}
+    {{- /* Check if this version is installed */ -}}
+    {{- $defaultVersionPath := joinPath $nvmDir "versions/node" $defaultVersion "bin" -}}
+    {{- if stat $defaultVersionPath -}}
+# Using NVM default version: {{ $defaultVersion }}
+$env.PATH = ($env.PATH | split row (char esep) | prepend $"($env.HOME)/.nvm/versions/node/{{ $defaultVersion }}/bin" | uniq)
+    {{- end -}}
+  {{- end -}}
+{{- else -}}
+  {{- /* No default set, fall back to latest installed version */ -}}
+  {{- $nodeVersionsDir := joinPath $nvmDir "versions/node" -}}
+  {{- if stat $nodeVersionsDir -}}
+    {{- $nodeDirs := readDir $nodeVersionsDir -}}
+    {{- if $nodeDirs -}}
+      {{- /* Get the latest version by sorting */ -}}
+      {{- $sortedVersions := list -}}
+      {{- range $nodeDir := $nodeDirs -}}
+        {{- if $nodeDir.IsDir -}}
+          {{- $sortedVersions = append $sortedVersions $nodeDir.Name -}}
+        {{- end -}}
+      {{- end -}}
+      {{- if $sortedVersions -}}
+        {{- /* NOTE: sortAlpha does lexical sorting, not semantic version sorting.
+             This means v10.x will sort after v9.x, which may not be the truly latest version.
+             For accurate version selection, use 'nvm alias default <version>' */ -}}
+        {{- $sortedVersions = sortAlpha $sortedVersions -}}
+        {{- $latestVersion := index $sortedVersions (sub (len $sortedVersions) 1) -}}
+# No NVM default set, using latest version: {{ $latestVersion }}
+# NOTE: This may not be the semantically latest version. Set a default with: nvm alias default <version>
+$env.PATH = ($env.PATH | split row (char esep) | prepend $"($env.HOME)/.nvm/versions/node/{{ $latestVersion }}/bin" | uniq)
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
+# Note: NVM doesn't have native Nushell support yet
+# You can use it through a compatibility layer or switch to fnm which has better Nushell support
+{{- end -}}

@@ -1,0 +1,56 @@
+{{- /* Common PATH additions */ -}}
+# Include helper functions
+{{- template "path-helpers" . }}
+
+{{- /* Cargo/Rust */ -}}
+{{- if stat (joinPath .chezmoi.homeDir ".cargo/bin") -}}
+# Rust/Cargo
+path_prepend "$HOME/.cargo/bin"
+{{- end }}
+
+{{- /* NPM global packages */ -}}
+{{- if stat (joinPath .chezmoi.homeDir ".npm-global/bin") -}}
+# NPM global packages
+path_prepend "$HOME/.npm-global/bin"
+{{- end }}
+
+{{- /* Go */ -}}
+{{- if stat (joinPath .chezmoi.homeDir "go/bin") -}}
+# Go binaries
+path_prepend "$HOME/go/bin"
+{{- end }}
+
+{{- /* Bun */ -}}
+{{- if stat (joinPath .chezmoi.homeDir ".bun/bin") -}}
+# Bun
+path_prepend "$HOME/.bun/bin"
+{{- end }}
+
+{{- /* Games directories (Linux) */ -}}
+{{- if eq .chezmoi.os "linux" -}}
+  {{- if stat "/usr/games" -}}
+# Games
+path_append "/usr/games"
+  {{- end }}
+  {{- if stat "/usr/local/games" -}}
+path_append "/usr/local/games"
+  {{- end }}
+{{- end }}
+
+{{- /* Snap (Linux) */ -}}
+{{- if and (eq .chezmoi.os "linux") (stat "/snap/bin") -}}
+# Snap packages
+path_append "/snap/bin"
+{{- end }}
+
+{{- /* WSL-specific Windows paths */ -}}
+{{- if .isWSL -}}
+# WSL lib
+path_append "/usr/lib/wsl/lib"
+{{- end }}
+
+# Export the final PATH
+export PATH
+
+# Clean up helper functions
+unset -f path_prepend path_append

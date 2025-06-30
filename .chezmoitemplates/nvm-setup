@@ -1,0 +1,49 @@
+{{- /* NVM Setup Template */ -}}
+{{- $nvmDir := joinPath .chezmoi.homeDir ".nvm" -}}
+{{- if stat $nvmDir -}}
+# NVM initialization
+export NVM_DIR="$HOME/.nvm"
+
+{{- /* Check for NVM's default alias first */ -}}
+{{- $defaultAlias := joinPath $nvmDir "alias/default" -}}
+{{- if stat $defaultAlias -}}
+  {{- $defaultVersion := include $defaultAlias | trim -}}
+  {{- if $defaultVersion -}}
+    {{- /* Check if this version is installed */ -}}
+    {{- $defaultVersionPath := joinPath $nvmDir "versions/node" $defaultVersion "bin" -}}
+    {{- if stat $defaultVersionPath -}}
+# Using NVM default version: {{ $defaultVersion }}
+export PATH="$HOME/.nvm/versions/node/{{ $defaultVersion }}/bin:$PATH"
+    {{- end -}}
+  {{- end -}}
+{{- else -}}
+  {{- /* No default set, fall back to latest installed version */ -}}
+  {{- $nodeVersionsDir := joinPath $nvmDir "versions/node" -}}
+  {{- if stat $nodeVersionsDir -}}
+    {{- $nodeDirs := readDir $nodeVersionsDir -}}
+    {{- if $nodeDirs -}}
+      {{- /* Get the latest version by sorting */ -}}
+      {{- $sortedVersions := list -}}
+      {{- range $nodeDir := $nodeDirs -}}
+        {{- if $nodeDir.IsDir -}}
+          {{- $sortedVersions = append $sortedVersions $nodeDir.Name -}}
+        {{- end -}}
+      {{- end -}}
+      {{- if $sortedVersions -}}
+        {{- /* NOTE: sortAlpha does lexical sorting, not semantic version sorting.
+             This means v10.x will sort after v9.x, which may not be the truly latest version.
+             For accurate version selection, use 'nvm alias default <version>' */ -}}
+        {{- $sortedVersions = sortAlpha $sortedVersions -}}
+        {{- $latestVersion := index $sortedVersions (sub (len $sortedVersions) 1) -}}
+# No NVM default set, using latest version: {{ $latestVersion }}
+# NOTE: This may not be the semantically latest version. Set a default with: nvm alias default <version>
+export PATH="$HOME/.nvm/versions/node/{{ $latestVersion }}/bin:$PATH"
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
+# Load NVM
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+{{- end -}}

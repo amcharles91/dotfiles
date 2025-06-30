@@ -1,0 +1,52 @@
+{{- /* NVM Setup for PowerShell */ -}}
+{{- $nvmDir := joinPath .chezmoi.homeDir ".nvm" -}}
+{{- if stat $nvmDir -}}
+# NVM configuration
+$env:NVM_DIR = "$HOME\.nvm"
+
+{{- /* Check for NVM's default alias first */ -}}
+{{- $defaultAlias := joinPath $nvmDir "alias/default" -}}
+{{- if stat $defaultAlias -}}
+  {{- $defaultVersion := include $defaultAlias | trim -}}
+  {{- if $defaultVersion -}}
+    {{- /* Check if this version is installed */ -}}
+    {{- $defaultVersionPath := joinPath $nvmDir "versions/node" $defaultVersion "bin" -}}
+    {{- if stat $defaultVersionPath -}}
+# Using NVM default version: {{ $defaultVersion }}
+{{- if eq .chezmoi.os "windows" }}
+$env:PATH = "$HOME\.nvm\versions\node\{{ $defaultVersion }}\bin;$env:PATH"
+{{- else }}
+$env:PATH = "$HOME/.nvm/versions/node/{{ $defaultVersion }}/bin:$env:PATH"
+{{- end }}
+    {{- end -}}
+  {{- end -}}
+{{- else -}}
+  {{- /* No default set, fall back to latest installed version */ -}}
+  {{- $nodeVersionsDir := joinPath $nvmDir "versions/node" -}}
+  {{- if stat $nodeVersionsDir -}}
+    {{- $nodeDirs := readDir $nodeVersionsDir -}}
+    {{- if $nodeDirs -}}
+      {{- /* Get the latest version by sorting */ -}}
+      {{- $sortedVersions := list -}}
+      {{- range $nodeDir := $nodeDirs -}}
+        {{- if $nodeDir.IsDir -}}
+          {{- $sortedVersions = append $sortedVersions $nodeDir.Name -}}
+        {{- end -}}
+      {{- end -}}
+      {{- if $sortedVersions -}}
+        {{- $sortedVersions = sortAlpha $sortedVersions -}}
+        {{- $latestVersion := index $sortedVersions (sub (len $sortedVersions) 1) -}}
+# No NVM default set, using latest version: {{ $latestVersion }}
+{{- if eq .chezmoi.os "windows" }}
+$env:PATH = "$HOME\.nvm\versions\node\{{ $latestVersion }}\bin;$env:PATH"
+{{- else }}
+$env:PATH = "$HOME/.nvm/versions/node/{{ $latestVersion }}/bin:$env:PATH"
+{{- end }}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
+# Note: NVM doesn't have native PowerShell support
+# Consider using nvm-windows or fnm for better PowerShell integration
+{{- end -}}

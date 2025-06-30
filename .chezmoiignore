@@ -47,6 +47,7 @@ LICENSE
 .local/share/
 .local/state/
 .config/chezmoi/chezmoi.toml
+.config/chezmoi-custom-paths.txt
 .claude/
 
 # OS-specific exclusions

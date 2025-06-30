@@ -1,0 +1,18 @@
+{{- /* Load custom PATH entries for Nushell */ -}}
+{{- $customPathsFile := joinPath .chezmoi.homeDir ".config/chezmoi-custom-paths.txt" -}}
+{{- if stat $customPathsFile -}}
+# Custom user-defined paths
+mut custom_paths = []
+  {{- range $line := file $customPathsFile | splitList "\n" -}}
+    {{- $trimmedLine := trim $line -}}
+    {{- if and $trimmedLine (not (hasPrefix "#" $trimmedLine)) -}}
+      {{- $pathStat := stat $trimmedLine -}}
+      {{- if and $pathStat $pathStat.IsDir -}}
+# Custom path: {{ $trimmedLine }}
+$custom_paths = ($custom_paths | append {{ $trimmedLine | squote }})
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+# Add custom paths to PATH (prepend for higher priority)
+$env.PATH = ($custom_paths | append ($env.PATH | split row (char esep)) | uniq)
+{{- end -}}

@@ -19,3 +19,11 @@
 
 # Add ~/.local/bin to PATH if not already present
 $env.PATH = ($env.PATH | split row (char esep) | prepend $"($env.HOME)/.local/bin" | uniq)
+
+# Additional PATH entries
+{{- template "path-additions-nushell" . }}
+
+{{- template "nvm-setup-nushell" . }}
+
+# Custom user-defined paths
+{{- template "custom-paths-nushell" . }}

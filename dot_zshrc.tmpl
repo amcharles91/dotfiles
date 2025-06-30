@@ -88,6 +88,15 @@ if [[ -z "$SSH_AUTH_SOCK" ]]; then
 fi
 {{- end }}
 
+# Additional PATH entries
+{{- template "path-additions" . }}
+
+# NVM configuration
+{{- template "nvm-setup" . }}
+
+# Custom user-defined paths
+{{- template "custom-paths" . }}
+
 # Custom functions
 mkcd() {
     mkdir -p "$1" && cd "$1"

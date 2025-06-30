@@ -1,0 +1,14 @@
+{{- /* Load custom PATH entries for Fish */ -}}
+{{- $customPathsFile := joinPath .chezmoi.homeDir ".config/chezmoi-custom-paths.txt" -}}
+{{- if stat $customPathsFile -}}
+  {{- range $line := file $customPathsFile | splitList "\n" -}}
+    {{- $trimmedLine := trim $line -}}
+    {{- if and $trimmedLine (not (hasPrefix "#" $trimmedLine)) -}}
+      {{- $pathStat := stat $trimmedLine -}}
+      {{- if and $pathStat $pathStat.IsDir -}}
+# Custom path: {{ $trimmedLine }}
+fish_add_path -p {{ $trimmedLine | squote }}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}

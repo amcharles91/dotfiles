@@ -1,0 +1,47 @@
+{{- /* Common PATH additions for Fish */ -}}
+{{- /* Cargo/Rust */ -}}
+{{- if stat (joinPath .chezmoi.homeDir ".cargo/bin") -}}
+# Rust/Cargo
+fish_add_path -p $HOME/.cargo/bin
+{{- end }}
+
+{{- /* NPM global packages */ -}}
+{{- if stat (joinPath .chezmoi.homeDir ".npm-global/bin") -}}
+# NPM global packages
+fish_add_path -p $HOME/.npm-global/bin
+{{- end }}
+
+{{- /* Go */ -}}
+{{- if stat (joinPath .chezmoi.homeDir "go/bin") -}}
+# Go binaries
+fish_add_path -p $HOME/go/bin
+{{- end }}
+
+{{- /* Bun */ -}}
+{{- if stat (joinPath .chezmoi.homeDir ".bun/bin") -}}
+# Bun
+fish_add_path -p $HOME/.bun/bin
+{{- end }}
+
+{{- /* Games directories (Linux) */ -}}
+{{- if eq .chezmoi.os "linux" -}}
+  {{- if stat "/usr/games" -}}
+# Games
+fish_add_path -a /usr/games
+  {{- end }}
+  {{- if stat "/usr/local/games" -}}
+fish_add_path -a /usr/local/games
+  {{- end }}
+{{- end }}
+
+{{- /* Snap (Linux) */ -}}
+{{- if and (eq .chezmoi.os "linux") (stat "/snap/bin") -}}
+# Snap packages
+fish_add_path -a /snap/bin
+{{- end }}
+
+{{- /* WSL-specific Windows paths */ -}}
+{{- if .isWSL -}}
+# WSL lib
+fish_add_path -a /usr/lib/wsl/lib
+{{- end }}
