@@ -21,7 +21,7 @@ CARGO_TOOLS=(
     ripgrep          # rg - faster grep
     bat              # Better cat with syntax highlighting
     eza              # Better ls with colors and git status
-    fd               # Better find
+    fd-find          # fd - Better find
     
     # Development tools (uncomment if needed)
     # tokei          # Count lines of code

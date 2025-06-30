@@ -9,6 +9,6 @@
 # - ripgrep: Better grep (rg)
 # - bat: Better cat with syntax highlighting
 # - eza: Better ls with colors
-# - fd: Better find
+# - fd-find: Better find (fd command)
 #
 # To add new tools, edit the CARGO_TOOLS array in install-cargo-tools
