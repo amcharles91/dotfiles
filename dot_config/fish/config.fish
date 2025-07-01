@@ -7,13 +7,13 @@ fish_add_path -p $HOME/.local/bin
 {{- template "path-additions-fish" . }}
 
 # Snap binary path
-{{- template "snap-path" . }}
+{{- template "snap-path-simple" . }}
 
 # Rust/Cargo setup (with optional installation)
 {{- template "rust-setup" . }}
 
-# Cargo tools status check
-{{- template "cargo-tools" . }}
+# Cargo tools
+{{- template "cargo-tools-simple" . }}
 
 # fnm (Node version manager) setup
 {{- template "fnm-setup-fish" . }}

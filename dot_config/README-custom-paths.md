@@ -35,7 +35,7 @@ The following paths are automatically added if they exist:
 - `~/.bun/bin` (Bun)
 - `/usr/games` and `/usr/local/games` (Linux only)
 - `/snap/bin` (Linux with Snap)
-- NVM paths (respects default version)
+- fnm paths (Fast Node Manager)
 - `/usr/lib/wsl/lib` (WSL only)
 
 ## PATH Priority
@@ -50,11 +50,15 @@ Custom paths and development tools are **prepended** to PATH, giving them higher
 - The order matters: paths are prepended in the order listed
 - Changes take effect after running `chezmoi apply` and restarting your shell
 
-## NVM Version Selection
+## Node Version Management
 
-The NVM setup respects your default version set with `nvm alias default <version>`. If no default is set, it falls back to the lexically latest version (note: v10.x would sort after v9.x due to alphabetical sorting). For accurate version selection, always set a default:
+Node.js versions are managed by fnm (Fast Node Manager). It automatically switches versions based on:
+- `.nvmrc` file
+- `.node-version` file  
+- `package.json` engines field
 
+To set a default version:
 ```bash
-nvm alias default node  # Use latest
-nvm alias default 18    # Use specific version
+fnm default 20      # Use Node.js v20
+fnm default system  # Use system Node.js
 ```
