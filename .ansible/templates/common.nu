@@ -4,7 +4,11 @@
 # Add paths to PATH
 $env.PATH = ($env.PATH | split row (char esep) | 
 {% for path in path_entries %}
+{% if '$HOME' in path %}
+    prepend $"($env.HOME){{ path.replace('$HOME', '') }}" |
+{% else %}
     prepend "{{ path }}" |
+{% endif %}
 {% endfor %}
     uniq)
 
