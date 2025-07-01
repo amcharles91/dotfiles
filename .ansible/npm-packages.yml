@@ -1,8 +1,8 @@
 # Global npm packages to install
 # Add your commonly used packages here
 npm_global_packages:
-  # Claude Desktop
-  - name: "@anthropic-ai/claude-desktop"
+  # Claude Code CLI
+  - name: "@anthropic-ai/claude-code"
     binary: claude
   
   # Development tools
@@ -15,3 +15,11 @@ npm_global_packages:
   # Add more packages as needed:
   # - name: package-name
   #   binary: command-name  # The command it provides (for checking if installed)
+  
+  # Examples of useful packages:
+  # - name: eslint
+  #   binary: eslint
+  # - name: nodemon
+  #   binary: nodemon
+  # - name: http-server
+  #   binary: http-server
