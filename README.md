@@ -1,205 +1,116 @@
-# Chezmoi Dotfiles
+# Dotfiles
 
-A secure, cross-platform dotfiles configuration managed by [chezmoi](https://www.chezmoi.io/) with modern shell support and development tools.
+Personal dotfiles managed with [chezmoi](https://www.chezmoi.io/) and [Ansible](https://www.ansible.com/).
 
-## 🚀 Features
+## Overview
 
-- **Multi-shell support**: Bash, Zsh, Fish, Nushell, PowerShell
-- **[Starship](https://starship.rs/)** prompt with Cyberpunk theme
-- **Modern CLI tools**: bat, ripgrep, fd, lsd, delta
-- **Cross-platform**: Windows, macOS, Linux, WSL
-- **Security-first**: Proper secret handling and .gitignore
-- **Automatic tool installation** via chezmoi externals
-- **WSL integration** with Windows interop
+This repository uses a hybrid approach:
+- **Chezmoi**: Manages dotfile templating and deployment
+- **Ansible**: Handles system package installation and configuration
 
-## 🎯 Quick Start
+## Prerequisites
 
-### One-line Install
+- Ubuntu/Debian-based system (including WSL)
+- `git` and `curl` installed
+
+## Installation
+
+### Linux/WSL
 
 ```bash
-# Linux/macOS/WSL
-sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply $GITHUB_USERNAME
-
-# Windows (PowerShell as Admin)
-winget install twpayne.chezmoi
-chezmoi init --apply $GITHUB_USERNAME
+# Clone and apply dotfiles
+chezmoi init --apply <your-github-username>
 ```
 
-### Manual Setup
+This will:
+1. Clone your dotfiles
+2. Install Ansible (if not present)
+3. Run the Ansible playbook to install all packages
+4. Apply your dotfiles
 
-1. **Install chezmoi**:
-   ```bash
-   # macOS
-   brew install chezmoi
-   
-   # Linux
-   sh -c "$(curl -fsLS get.chezmoi.io)"
-   
-   # Windows
-   winget install twpayne.chezmoi
-   # or
-   choco install chezmoi
-   ```
+### Windows
 
-2. **Initialize dotfiles**:
-   ```bash
-   chezmoi init https://github.com/yourusername/dotfiles.git
-   ```
+For Windows-native shells and terminal setup:
 
-3. **Review changes** (optional):
-   ```bash
-   chezmoi diff
-   ```
-
-4. **Apply configuration**:
-   ```bash
-   chezmoi apply
-   ```
-
-5. **Post-install** (Nushell only):
-   ```nu
-   mkdir ($nu.data-dir | path join "vendor/autoload")
-   starship init nu | save -f ($nu.data-dir | path join "vendor/autoload/starship.nu")
-   ```
-
-## 🔐 Security
-
-### Secrets Management
-
-This configuration properly handles secrets:
-
-- **SSH keys** are never stored in the repo
-- **Cloud credentials** (.aws, .gcloud, etc.) are ignored
-- **API tokens** and passwords are excluded
-- **Encryption support** for sensitive data (using age or gpg)
-
-To add an encrypted secret:
-```bash
-# Using age encryption (recommended)
-chezmoi add --encrypt ~/.ssh/config
-
-# Using GPG
-chezmoi add --encrypt --symmetric ~/.netrc
+```powershell
+# Run the Windows setup script
+.\windows\setup.ps1
 ```
 
-### First-time Setup
+This installs:
+- Fish shell
+- Nushell
+- Starship prompt
+- JetBrainsMono Nerd Font
 
-You'll be prompted for:
-- Your full name
-- Email address
-- GitHub username
-- Preferred editor
-- (Automatic WSL detection)
-
-## 📁 Structure
-
-```
-.
-├── .chezmoi.toml.tmpl              # User configuration template
-├── .chezmoiexternal.toml           # External tool management
-├── .chezmoiignore                  # Security exclusions
-├── .chezmoitemplates/              # Shared templates
-│   ├── shell-common                # Common aliases/exports
-│   ├── shell-functions             # Shared functions
-│   └── wsl-integration             # WSL-specific settings
-├── .chezmoiscripts/
-│   ├── run_after_install-packages.sh.tmpl
-│   └── run_after_validate.sh.tmpl
-├── dot_config/
-│   ├── starship.toml               # Starship prompt config
-│   ├── fish/config.fish            # Fish shell
-│   ├── nushell/config.nu           # Nushell
-│   └── powershell/profile.ps1.tmpl # PowerShell
-├── dot_bashrc.tmpl                 # Bash config
-└── dot_zshrc.tmpl                  # Zsh config
-```
-
-## 🛠️ Included Tools
+## What's Included
 
 ### Shells
-- **Bash/Zsh**: Enhanced with completions and history
-- **Fish**: Modern, user-friendly shell
-- **Nushell**: Data-driven shell
-- **PowerShell**: Cross-platform automation
+- **Bash**: Enhanced with aliases and functions
+- **Fish**: Modern shell with autosuggestions
+- **Nushell**: Data-oriented shell
 
-### CLI Enhancements
-- **starship**: Fast, customizable prompt
-- **bat**: Syntax-highlighted cat
-- **ripgrep (rg)**: Ultra-fast grep
-- **fd**: User-friendly find
-- **lsd**: Modern ls with icons
-- **delta**: Better git diffs
+### Developer Tools
+- **Starship**: Cross-shell prompt
+- **ripgrep** (`rg`): Fast grep replacement
+- **bat**: Better `cat` with syntax highlighting
+- **eza**: Modern `ls` replacement
+- **fd**: Fast `find` replacement
+- **fnm**: Fast Node.js version manager
 
-## 🎨 Customization
+### Configuration
 
-### Local Overrides
+Edit `.chezmoi.toml` to customize:
+```toml
+[data]
+    name = "Your Name"
+    email = "your.email@example.com"
+    githubUser = "yourusername"
+    editor = "nano"
+    defaultShell = "nu"
+```
 
-Each shell sources a local config if present:
-- `~/.bashrc.local`
-- `~/.zshrc.local`
-- `~/.config/fish/config.local.fish`
-- `~/.config/powershell/profile.local.ps1`
+## Updates
 
-### Starship Theme
+To update packages and dotfiles:
 
-The Cyberpunk theme features:
-- 🛡️ Knight shield icon
-- Yellow/cyan color scheme
-- Git status with icons
-- Language version detection
-- Command duration
-- Memory usage warnings
-
-### WSL Integration
-
-Automatic detection and configuration:
-- Windows browser integration
-- Clipboard support (pbcopy/pbpaste)
-- Explorer.exe aliases
-- WSLg GUI app support
-
-## 🔧 Maintenance
-
-### Update dotfiles
 ```bash
 chezmoi update
 ```
 
-### Edit configuration
+## Structure
+
+```
+.
+├── .chezmoi.toml           # User configuration
+├── .chezmoiscripts/        # Chezmoi hooks
+│   ├── run_once_01-install-ansible.sh
+│   └── run_after_02-ansible-playbook.sh
+├── ansible/                # Ansible configuration
+│   ├── playbook.yml        # Main playbook
+│   ├── requirements.yml    # Galaxy dependencies
+│   └── templates/          # Shell configurations
+├── dot_config/             # Application configs
+│   ├── fish/
+│   ├── nushell/
+│   └── starship.toml
+├── dot_bashrc              # Bash configuration
+└── windows/                # Windows setup
+    └── setup.ps1
+```
+
+## Troubleshooting
+
+### Force Ansible re-run
+
 ```bash
-chezmoi edit ~/.bashrc
+chezmoi state delete-bucket --bucket=scriptState
 chezmoi apply
 ```
 
-### Add new files
+### Manual Ansible run
+
 ```bash
-chezmoi add ~/.config/newapp/config
+cd ~/.local/share/chezmoi/ansible
+ansible-playbook -i inventory.ini playbook.yml --ask-become-pass
 ```
-
-### Re-run installation
-```bash
-chezmoi apply --refresh-externals
-```
-
-## 📝 Troubleshooting
-
-Run validation to check your setup:
-```bash
-~/.local/share/chezmoi/.chezmoiscripts/run_after_validate.sh
-```
-
-Common issues:
-- **Fonts not showing**: Select "JetBrainsMono Nerd Font" in terminal
-- **Command not found**: Ensure `~/.local/bin` is in PATH
-- **WSL clipboard**: Install `wslu` package
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Test your changes with `chezmoi apply --dry-run`
-4. Submit a pull request
-
-## 📄 License
-
-MIT

@@ -1,27 +1,32 @@
 # Fish shell configuration
 
-# Add ~/.local/bin to PATH if not already present
-fish_add_path -p $HOME/.local/bin
+# Source Ansible-managed environment
+if test -f $HOME/.config/ansible_generated/common.fish
+    source $HOME/.config/ansible_generated/common.fish
+end
 
-# Additional PATH entries
-{{- template "path-additions-fish" . }}
+# Common aliases
+alias ll='ls -alF'
+alias la='ls -A'
+alias l='ls -CF'
+alias ..='cd ..'
+alias ...='cd ../..'
+alias grep='grep --color=auto'
 
-# Snap binary path
-{{- template "snap-path-simple" . }}
+# Git aliases
+alias gs='git status'
+alias ga='git add'
+alias gc='git commit'
+alias gp='git push'
+alias gl='git log --oneline'
+alias gd='git diff'
 
-# Rust/Cargo setup (with optional installation)
-{{- template "rust-setup" . }}
+# Safety aliases
+alias rm='rm -i'
+alias cp='cp -i'
+alias mv='mv -i'
 
-# Cargo tools
-{{- template "cargo-tools-simple" . }}
-
-# fnm (Node version manager) setup
-{{- template "fnm-setup-fish" . }}
-
-# Custom user-defined paths
-# Custom paths disabled temporarily
-
-# Initialize Starship
-if status is-interactive
-    starship init fish | source
+# Custom functions
+function mkcd
+    mkdir -p $argv[1] && cd $argv[1]
 end

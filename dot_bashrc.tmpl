@@ -7,17 +7,9 @@ if [ -f /etc/bash.bashrc ]; then
     . /etc/bash.bashrc
 fi
 
-# User specific environment
-if ! [[ "$PATH" =~ "$HOME/.local/bin:$HOME/bin:" ]]; then
-    PATH="$HOME/.local/bin:$HOME/bin:$PATH"
-fi
-export PATH
-
-# Initialize Starship prompt
-if command -v starship &> /dev/null; then
-    eval "$(starship init bash)"
-else
-    echo "Warning: Starship not found. Run 'chezmoi apply' to install."
+# Source Ansible-managed environment
+if [ -f "$HOME/.config/ansible_generated/common.bash" ]; then
+    . "$HOME/.config/ansible_generated/common.bash"
 fi
 
 # Common aliases
@@ -41,39 +33,6 @@ alias rm='rm -i'
 alias cp='cp -i'
 alias mv='mv -i'
 
-# WSL-specific settings
-{{- if .isWSL }}
-# WSL detected - add Windows interop
-export BROWSER="{{ .wsl.browser }}"
-alias open="{{ .wsl.browser }}"
-alias explorer="explorer.exe"
-
-# Fix WSL2 network issues
-if [[ -z "$SSH_AUTH_SOCK" ]]; then
-    export SSH_AUTH_SOCK="$HOME/.ssh/agent.sock"
-fi
-{{- end }}
-
-# Path helpers (functions for safe PATH manipulation)
-{{- template "path-helpers" . }}
-
-# Additional PATH entries
-{{- template "path-additions" . }}
-
-# Snap binary path
-{{- template "snap-path-simple" . }}
-
-# Rust/Cargo setup (with optional installation)
-{{- template "rust-setup" . }}
-
-# Cargo tools
-{{- template "cargo-tools-simple" . }}
-
-# fnm (Node version manager) setup
-{{- template "fnm-setup" . }}
-
-# Custom user-defined paths
-# Custom paths disabled temporarily
 
 # Custom functions
 mkcd() {

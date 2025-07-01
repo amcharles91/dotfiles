@@ -1,0 +1,13 @@
+#!/bin/bash
+# Run after: Always run the Ansible playbook
+set -euo pipefail
+
+cd "{{ .chezmoi.sourceDir }}/ansible"
+
+echo "📦 Installing Galaxy requirements..."
+ansible-galaxy install -r requirements.yml --force
+
+echo "📋 Running Ansible playbook..."
+ansible-playbook -i inventory.ini playbook.yml --ask-become-pass
+
+echo "✨ System packages updated!"

@@ -1,0 +1,5 @@
+---
+# Ansible Galaxy requirements
+roles:
+  - name: gantsign.rust
+    version: 2.3.0  # Pinning version for stability
