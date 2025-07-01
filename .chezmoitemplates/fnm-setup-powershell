@@ -1,7 +1,0 @@
-{{- /* fnm Setup for PowerShell */ -}}
-# fnm (Fast Node Manager) setup
-{{- if lookPath "fnm" }}
-fnm env --use-on-cd | Out-String | Invoke-Expression
-{{- else }}
-# fnm not found - install with: cargo binstall fnm
-{{- end }}

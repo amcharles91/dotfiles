@@ -1,7 +1,0 @@
-{{- /* fnm Setup for Fish */ -}}
-# fnm (Fast Node Manager) setup
-{{- if lookPath "fnm" }}
-fnm env --use-on-cd | source
-{{- else }}
-# fnm not found - install with: cargo binstall fnm
-{{- end }}
