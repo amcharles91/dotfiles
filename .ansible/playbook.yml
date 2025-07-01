@@ -1,0 +1,264 @@
+---
+- name: Setup Development Environment
+  hosts: localhost
+  connection: local
+  gather_facts: yes
+  
+  vars:
+    # User configuration (mirrors chezmoi config)
+    user_name: "{{ ansible_env.USER }}"
+    
+    # Common PATH entries for all shells
+    path_entries:
+      - "$HOME/.local/bin"
+      - "$HOME/.cargo/bin"
+    
+    # Include npm packages list
+    npm_packages_file: "{{ playbook_dir }}/npm-packages.yml"
+    
+    # APT packages to install
+    apt_packages:
+      - build-essential
+      - pkg-config
+      - libssl-dev
+      - curl
+      - wget
+      - git
+      - unzip
+      - jq
+      - htop
+      - tree
+      - software-properties-common
+      - ca-certificates
+      - gnupg
+      - lsb-release
+      - fish
+      - ripgrep
+      - bat
+      - fd-find
+    
+    # Cargo tools to install
+    cargo_tools:
+      - name: starship
+        binary: starship
+      - name: cargo-binstall
+        binary: cargo-binstall
+    
+    # Additional cargo tools to install via binstall
+    cargo_binstall_tools:
+      - name: fnm
+        binary: fnm
+      - name: eza
+        binary: eza
+      - name: nu
+        binary: nu
+      - name: cargo-update
+        binary: cargo-install-update
+
+  tasks:
+    # System packages
+    - name: Update apt cache and install system packages
+      become: yes
+      apt:
+        name: "{{ apt_packages }}"
+        state: present
+        update_cache: yes
+        cache_valid_time: 3600
+
+    # Symlinks for renamed packages
+    - name: Create symlink for bat if batcat exists
+      become: yes
+      file:
+        src: "/usr/bin/batcat"
+        dest: "/usr/local/bin/bat"
+        state: link
+      failed_when: false
+
+    - name: Create symlink for fd if fdfind exists
+      become: yes
+      file:
+        src: "/usr/bin/fdfind"
+        dest: "/usr/local/bin/fd"
+        state: link
+      failed_when: false
+
+    # Rust installation
+    - name: Check if Rust is installed
+      command: which cargo
+      register: cargo_check
+      failed_when: false
+      changed_when: false
+
+    - name: Download Rust installer script
+      when: cargo_check.rc != 0
+      get_url:
+        url: https://sh.rustup.rs
+        dest: /tmp/rustup-init.sh
+        mode: '0755'
+        # Verify HTTPS certificate
+        validate_certs: yes
+        # Optional: Add checksum verification if Rust provides one
+        # checksum: sha256:HASH_HERE
+
+    - name: Verify Rust installer script content
+      when: cargo_check.rc != 0
+      shell: |
+        grep -q "rust-lang.org" /tmp/rustup-init.sh && 
+        grep -q "rustup" /tmp/rustup-init.sh &&
+        head -1 /tmp/rustup-init.sh | grep -q "^#!/bin/sh"
+      register: script_verify
+      failed_when: script_verify.rc != 0
+
+    - name: Install Rust via verified script
+      when: cargo_check.rc != 0 and script_verify.rc == 0
+      shell: /tmp/rustup-init.sh -y
+      args:
+        creates: "{{ ansible_env.HOME }}/.cargo/bin/cargo"
+
+    - name: Clean up installer script
+      file:
+        path: /tmp/rustup-init.sh
+        state: absent
+
+    # Cargo tools installation
+    - name: Install cargo tools
+      command: "{{ ansible_env.HOME }}/.cargo/bin/cargo install {{ item.name }}"
+      args:
+        creates: "{{ ansible_env.HOME }}/.cargo/bin/{{ item.binary }}"
+      environment:
+        PATH: "{{ ansible_env.HOME }}/.cargo/bin:{{ ansible_env.PATH }}"
+      loop: "{{ cargo_tools }}"
+
+    # Install additional tools via cargo-binstall
+    - name: Install tools via cargo-binstall
+      command: "{{ ansible_env.HOME }}/.cargo/bin/cargo-binstall -y {{ item.name }}"
+      args:
+        creates: "{{ ansible_env.HOME }}/.cargo/bin/{{ item.binary }}"
+      environment:
+        PATH: "{{ ansible_env.HOME }}/.cargo/bin:{{ ansible_env.PATH }}"
+      loop: "{{ cargo_binstall_tools }}"
+
+    # Node.js via fnm
+    - name: Check if fnm is installed
+      stat:
+        path: "{{ ansible_env.HOME }}/.cargo/bin/fnm"
+      register: fnm_check
+
+    - name: Install Node.js LTS via fnm
+      when: fnm_check.stat.exists
+      block:
+        - name: Check if Node is already installed
+          shell: |
+            export PATH="{{ ansible_env.HOME }}/.cargo/bin:$PATH"
+            fnm list | grep -q "lts" || echo "not_installed"
+          register: node_check
+          changed_when: false
+          failed_when: false
+
+        - name: Install Node.js LTS
+          when: node_check.stdout == "not_installed"
+          shell: |
+            export PATH="{{ ansible_env.HOME }}/.cargo/bin:$PATH"
+            fnm install --lts
+            fnm default lts-latest
+            fnm use lts-latest
+          environment:
+            FNM_DIR: "{{ ansible_env.HOME }}/.local/share/fnm"
+
+    # Install pnpm
+    - name: Install pnpm via npm
+      when: fnm_check.stat.exists
+      shell: |
+        export PATH="{{ ansible_env.HOME }}/.cargo/bin:$PATH"
+        export FNM_DIR="{{ ansible_env.HOME }}/.local/share/fnm"
+        eval "$(fnm env)"
+        npm install -g pnpm
+      args:
+        creates: "{{ ansible_env.HOME }}/.local/share/fnm/aliases/default/bin/pnpm"
+
+    # Install bun
+    - name: Install bun via npm
+      when: fnm_check.stat.exists
+      shell: |
+        export PATH="{{ ansible_env.HOME }}/.cargo/bin:$PATH"
+        export FNM_DIR="{{ ansible_env.HOME }}/.local/share/fnm"
+        eval "$(fnm env)"
+        npm install -g bun
+      args:
+        creates: "{{ ansible_env.HOME }}/.local/share/fnm/aliases/default/bin/bun"
+
+    # Install global npm packages
+    - name: Include npm packages configuration
+      include_vars: "{{ npm_packages_file }}"
+      when: fnm_check.stat.exists
+
+    - name: Install global npm packages
+      when: 
+        - fnm_check.stat.exists
+        - npm_global_packages is defined
+      shell: |
+        export PATH="{{ ansible_env.HOME }}/.cargo/bin:$PATH"
+        export FNM_DIR="{{ ansible_env.HOME }}/.local/share/fnm"
+        eval "$(fnm env)"
+        npm install -g {{ item.name }}
+      args:
+        creates: "{{ ansible_env.HOME }}/.local/share/fnm/aliases/default/bin/{{ item.binary }}"
+      loop: "{{ npm_global_packages | default([]) }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+    # Create directories
+    - name: Ensure required directories exist
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - "{{ ansible_env.HOME }}/.local/bin"
+        - "{{ ansible_env.HOME }}/.config"
+        - "{{ ansible_env.HOME }}/.config/fish"
+        - "{{ ansible_env.HOME }}/.config/nushell"
+        - "{{ ansible_env.HOME }}/.config/ansible_generated"
+
+    # Generate shell configuration snippets
+    - name: Generate bash configuration snippet
+      template:
+        src: templates/common.bash
+        dest: "{{ ansible_env.HOME }}/.config/ansible_generated/common.bash"
+        mode: '0644'
+
+    - name: Generate fish configuration snippet
+      template:
+        src: templates/common.fish
+        dest: "{{ ansible_env.HOME }}/.config/ansible_generated/common.fish"
+        mode: '0644'
+
+    - name: Generate nushell configuration snippet
+      template:
+        src: templates/common.nu
+        dest: "{{ ansible_env.HOME }}/.config/ansible_generated/common.nu"
+        mode: '0644'
+
+    # Fonts
+    - name: Create fonts directory
+      file:
+        path: "{{ ansible_env.HOME }}/.local/share/fonts"
+        state: directory
+        mode: '0755'
+
+    - name: Check if JetBrainsMono font is installed
+      stat:
+        path: "{{ ansible_env.HOME }}/.local/share/fonts/JetBrainsMonoNerdFont-Regular.ttf"
+      register: font_check
+
+    - name: Download and install JetBrainsMono Nerd Font
+      when: not font_check.stat.exists
+      block:
+        - name: Download JetBrainsMono Nerd Font
+          unarchive:
+            src: https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip
+            dest: "{{ ansible_env.HOME }}/.local/share/fonts"
+            remote_src: yes
+
+        - name: Update font cache
+          command: fc-cache -f -v

@@ -1,0 +1,23 @@
+[data]
+    name = "andrew charles"
+    email = "andrewmcharles@live.com"
+    githubUser = "amcharles91"
+    editor = "nano"
+    defaultShell = "nu"
+
+[diff]
+    # Use delta for better diffs if available
+    pager = "delta"
+
+[merge]
+    # Use your preferred merge tool
+    command = "vimdiff"
+
+[edit]
+    # Set default editor
+    command = "nano"
+
+[git]
+    # Enable auto-commit but not auto-push (safer)
+    autoCommit = true
+    autoPush = false
