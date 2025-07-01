@@ -92,11 +92,7 @@
 
     - name: Verify Rust installer script content
       when: cargo_check.rc != 0
-      shell: |
-        # Check that it's actually from rust-lang.org
-        grep -q "rust-lang.org" /tmp/rustup-init.sh || exit 1
-        # Check for expected rustup signatures
-        grep -q "rustup" /tmp/rustup-init.sh || exit 1
+      shell: grep -q "rust-lang.org" /tmp/rustup-init.sh && grep -q "rustup" /tmp/rustup-init.sh
       register: script_verify
 
     - name: Install Rust via verified script
