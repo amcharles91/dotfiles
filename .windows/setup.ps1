@@ -97,6 +97,24 @@ if (-not (Test-Command "starship")) {
     Write-Host "✅ Starship already installed" -ForegroundColor Green
 }
 
+# Install pnpm
+Write-Host "`n📦 Installing pnpm..." -ForegroundColor Yellow
+if (-not (Test-Command "pnpm")) {
+    Write-Host "Installing pnpm via npm..." -ForegroundColor Cyan
+    npm install -g pnpm
+} else {
+    Write-Host "✅ pnpm already installed" -ForegroundColor Green
+}
+
+# Install bun
+Write-Host "`n🍞 Installing bun..." -ForegroundColor Yellow
+if (-not (Test-Command "bun")) {
+    Write-Host "Installing bun via npm..." -ForegroundColor Cyan
+    npm install -g bun
+} else {
+    Write-Host "✅ bun already installed" -ForegroundColor Green
+}
+
 # Install JetBrainsMono Nerd Font
 Write-Host "`n🔤 Installing JetBrainsMono Nerd Font..." -ForegroundColor Yellow
 
@@ -209,6 +227,7 @@ if (-not (Test-Path $profileDir)) {
 $starshipInit = @"
 # Initialize Starship prompt
 if (Get-Command starship -ErrorAction SilentlyContinue) {
+    `$env:STARSHIP_SHELL = "pwsh"
     Invoke-Expression (&starship init powershell)
 }
 "@
@@ -234,6 +253,8 @@ Write-Host "`nInstalled components:" -ForegroundColor Cyan
 if (Test-Command "fish") { Write-Host "  ✅ Fish shell" -ForegroundColor Green }
 if (Test-Command "nu") { Write-Host "  ✅ Nushell" -ForegroundColor Green }
 if (Test-Command "starship") { Write-Host "  ✅ Starship prompt" -ForegroundColor Green }
+if (Test-Command "pnpm") { Write-Host "  ✅ pnpm" -ForegroundColor Green }
+if (Test-Command "bun") { Write-Host "  ✅ bun" -ForegroundColor Green }
 Write-Host "  ✅ JetBrainsMono Nerd Font (may require restart)" -ForegroundColor Green
 
 Write-Host "`nNext steps:" -ForegroundColor Yellow

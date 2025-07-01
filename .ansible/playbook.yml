@@ -13,6 +13,9 @@
       - "$HOME/.local/bin"
       - "$HOME/.cargo/bin"
     
+    # Include npm packages list
+    npm_packages_file: "{{ playbook_dir }}/npm-packages.yml"
+    
     # APT packages to install
     apt_packages:
       - build-essential
@@ -134,6 +137,75 @@
       environment:
         PATH: "{{ ansible_env.HOME }}/.cargo/bin:{{ ansible_env.PATH }}"
       loop: "{{ cargo_binstall_tools }}"
+
+    # Node.js via fnm
+    - name: Check if fnm is installed
+      stat:
+        path: "{{ ansible_env.HOME }}/.cargo/bin/fnm"
+      register: fnm_check
+
+    - name: Install Node.js LTS via fnm
+      when: fnm_check.stat.exists
+      block:
+        - name: Check if Node is already installed
+          shell: |
+            export PATH="{{ ansible_env.HOME }}/.cargo/bin:$PATH"
+            fnm list | grep -q "lts" || echo "not_installed"
+          register: node_check
+          changed_when: false
+          failed_when: false
+
+        - name: Install Node.js LTS
+          when: node_check.stdout == "not_installed"
+          shell: |
+            export PATH="{{ ansible_env.HOME }}/.cargo/bin:$PATH"
+            fnm install --lts
+            fnm default lts-latest
+            fnm use lts-latest
+          environment:
+            FNM_DIR: "{{ ansible_env.HOME }}/.local/share/fnm"
+
+    # Install pnpm
+    - name: Install pnpm via npm
+      when: fnm_check.stat.exists
+      shell: |
+        export PATH="{{ ansible_env.HOME }}/.cargo/bin:$PATH"
+        export FNM_DIR="{{ ansible_env.HOME }}/.local/share/fnm"
+        eval "$(fnm env)"
+        npm install -g pnpm
+      args:
+        creates: "{{ ansible_env.HOME }}/.local/share/fnm/aliases/default/bin/pnpm"
+
+    # Install bun
+    - name: Install bun via npm
+      when: fnm_check.stat.exists
+      shell: |
+        export PATH="{{ ansible_env.HOME }}/.cargo/bin:$PATH"
+        export FNM_DIR="{{ ansible_env.HOME }}/.local/share/fnm"
+        eval "$(fnm env)"
+        npm install -g bun
+      args:
+        creates: "{{ ansible_env.HOME }}/.local/share/fnm/aliases/default/bin/bun"
+
+    # Install global npm packages
+    - name: Include npm packages configuration
+      include_vars: "{{ npm_packages_file }}"
+      when: fnm_check.stat.exists
+
+    - name: Install global npm packages
+      when: 
+        - fnm_check.stat.exists
+        - npm_global_packages is defined
+      shell: |
+        export PATH="{{ ansible_env.HOME }}/.cargo/bin:$PATH"
+        export FNM_DIR="{{ ansible_env.HOME }}/.local/share/fnm"
+        eval "$(fnm env)"
+        npm install -g {{ item.name }}
+      args:
+        creates: "{{ ansible_env.HOME }}/.local/share/fnm/aliases/default/bin/{{ item.binary }}"
+      loop: "{{ npm_global_packages | default([]) }}"
+      loop_control:
+        label: "{{ item.name }}"
 
     # Create directories
     - name: Ensure required directories exist

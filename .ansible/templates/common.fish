@@ -18,5 +18,6 @@ end
 # Starship prompt
 if status is-interactive
     and command -sq starship
+    set -gx STARSHIP_SHELL "fish"
     starship init fish | source
 end

@@ -1,0 +1,17 @@
+# Global npm packages to install
+# Add your commonly used packages here
+npm_global_packages:
+  # Claude Desktop
+  - name: "@anthropic-ai/claude-desktop"
+    binary: claude
+  
+  # Development tools
+  - name: typescript
+    binary: tsc
+  
+  - name: prettier
+    binary: prettier
+  
+  # Add more packages as needed:
+  # - name: package-name
+  #   binary: command-name  # The command it provides (for checking if installed)

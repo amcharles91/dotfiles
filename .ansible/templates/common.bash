@@ -21,5 +21,6 @@ fi
 
 # Starship prompt
 if command -v starship &> /dev/null; then
+    export STARSHIP_SHELL="bash"
     eval "$(starship init bash)"
 fi
