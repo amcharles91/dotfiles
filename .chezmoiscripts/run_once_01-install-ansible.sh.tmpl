@@ -1,5 +1,6 @@
+{{- if ne .chezmoi.os "windows" -}}
 #!/bin/bash
-# Run once: Install Ansible if not present
+# Run once: Install Ansible if not present (Linux only)
 set -euo pipefail
 
 if ! command -v ansible &> /dev/null; then
@@ -12,3 +13,4 @@ if ! command -v ansible &> /dev/null; then
 else
     echo "✅ Ansible already installed"
 fi
+{{- end -}}

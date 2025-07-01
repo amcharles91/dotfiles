@@ -1,3 +1,4 @@
+{{- if ne .chezmoi.os "windows" -}}
 # Nushell Configuration File
 # ~/.config/nushell/config.nu
 
@@ -35,3 +36,4 @@ def mkcd [dir: string] {
     mkdir $dir
     cd $dir
 }
+{{- end -}}

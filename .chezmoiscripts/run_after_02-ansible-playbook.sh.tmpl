@@ -1,5 +1,6 @@
+{{- if ne .chezmoi.os "windows" -}}
 #!/bin/bash
-# Run after: Always run the Ansible playbook
+# Run after: Always run the Ansible playbook (Linux only)
 set -euo pipefail
 
 cd "{{ .chezmoi.sourceDir }}/.ansible"
@@ -11,3 +12,4 @@ echo "📋 Running Ansible playbook..."
 ansible-playbook -i inventory.ini playbook.yml --ask-become-pass
 
 echo "✨ System packages updated!"
+{{- end -}}

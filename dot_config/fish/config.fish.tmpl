@@ -1,3 +1,4 @@
+{{- if ne .chezmoi.os "windows" -}}
 # Fish shell configuration
 
 # Source Ansible-managed environment
@@ -30,3 +31,4 @@ alias mv='mv -i'
 function mkcd
     mkdir -p $argv[1] && cd $argv[1]
 end
+{{- end -}}
