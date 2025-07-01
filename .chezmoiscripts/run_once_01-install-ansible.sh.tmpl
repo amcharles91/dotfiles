@@ -12,5 +12,8 @@ if ! command -v ansible &> /dev/null; then
     echo "✅ Ansible installed"
 else
     echo "✅ Ansible already installed"
+    # Show version for reference
+    ansible --version | head -1
+    echo "💡 To upgrade: sudo apt-get update && sudo apt-get upgrade ansible"
 fi
 {{- end -}}
