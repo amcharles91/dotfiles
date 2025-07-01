@@ -16,12 +16,21 @@ $env.config = {
 
 # Initialize Starship prompt
 if ((which starship | length) > 0) {
+    let starship_path = ($nu.data-dir | path join "vendor/autoload/starship.nu")
+    let vendor_dir = ($nu.data-dir | path join "vendor/autoload")
+    
     # Create vendor autoload directory if it doesn't exist
-    mkdir ($nu.data-dir | path join "vendor/autoload")
-    # Generate starship init file
-    starship init nu | save -f ($nu.data-dir | path join "vendor/autoload/starship.nu")
+    if not ($vendor_dir | path exists) {
+        mkdir $vendor_dir
+    }
+    
+    # Generate starship init file if it doesn't exist
+    if not ($starship_path | path exists) {
+        starship init nu | save -f $starship_path
+    }
+    
     # Source it
-    source ($nu.data-dir | path join "vendor/autoload/starship.nu")
+    source $starship_path
 }
 
 # Common aliases
