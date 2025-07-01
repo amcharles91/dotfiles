@@ -1,6 +1,12 @@
 # This file is managed by Ansible. DO NOT EDIT.
 # Source this file in your .bashrc
 
+# Ensure we have system paths included
+# Check if /snap/bin exists and is not in PATH
+if [[ -d "/snap/bin" ]] && [[ ":$PATH:" != *":/snap/bin:"* ]]; then
+    PATH="$PATH:/snap/bin"
+fi
+
 # Add paths if not already present
 for p in {{ path_entries | join(' ') }}; do
     # Safe variable expansion without eval
