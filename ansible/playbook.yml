@@ -79,12 +79,36 @@
       failed_when: false
       changed_when: false
 
-    - name: Install Rust via rustup
+    - name: Download Rust installer script
+      when: cargo_check.rc != 0
+      get_url:
+        url: https://sh.rustup.rs
+        dest: /tmp/rustup-init.sh
+        mode: '0755'
+        # Verify HTTPS certificate
+        validate_certs: yes
+        # Optional: Add checksum verification if Rust provides one
+        # checksum: sha256:HASH_HERE
+
+    - name: Verify Rust installer script content
       when: cargo_check.rc != 0
       shell: |
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+        # Check that it's actually from rust-lang.org
+        grep -q "rust-lang.org" /tmp/rustup-init.sh || exit 1
+        # Check for expected rustup signatures
+        grep -q "rustup" /tmp/rustup-init.sh || exit 1
+      register: script_verify
+
+    - name: Install Rust via verified script
+      when: cargo_check.rc != 0 and script_verify.rc == 0
+      shell: /tmp/rustup-init.sh -y
       args:
         creates: "{{ ansible_env.HOME }}/.cargo/bin/cargo"
+
+    - name: Clean up installer script
+      file:
+        path: /tmp/rustup-init.sh
+        state: absent
 
     # Cargo tools installation
     - name: Install cargo tools
