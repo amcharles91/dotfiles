@@ -147,15 +147,55 @@ if (Test-Command "scoop") {
 # Configure Windows Terminal (if installed)
 Write-Host "`n⚙️  Configuring Windows Terminal..." -ForegroundColor Yellow
 
-$wtSettingsPath = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json"
-$wtPreviewSettingsPath = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminalPreview_8wekyb3d8bbwe\LocalState\settings.json"
+# Source settings location
+$sourceSettings = Join-Path (Split-Path -Parent $PSScriptRoot) "windows-terminal\settings.json"
 
-if ((Test-Path $wtSettingsPath) -or (Test-Path $wtPreviewSettingsPath)) {
-    Write-Host "Windows Terminal detected." -ForegroundColor Green
-    Write-Host "Please manually update your Windows Terminal settings to use 'JetBrainsMono Nerd Font' as the font." -ForegroundColor Yellow
-    Write-Host "You can also copy the settings from: $PSScriptRoot\..\windows-terminal\settings.json" -ForegroundColor Cyan
-} else {
+# Check for Windows Terminal installations
+$wtPackages = @(
+    @{
+        Name = "Windows Terminal"
+        Path = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState"
+    },
+    @{
+        Name = "Windows Terminal Preview"
+        Path = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminalPreview_8wekyb3d8bbwe\LocalState"
+    }
+)
+
+$configured = $false
+foreach ($wt in $wtPackages) {
+    if (Test-Path $wt.Path) {
+        Write-Host "Found $($wt.Name)" -ForegroundColor Cyan
+        $targetSettings = Join-Path $wt.Path "settings.json"
+        
+        # Backup existing settings if present
+        if (Test-Path $targetSettings) {
+            $backupPath = Join-Path $wt.Path "settings.backup.json"
+            Copy-Item -Path $targetSettings -Destination $backupPath -Force
+            Write-Host "  Backed up existing settings to: settings.backup.json" -ForegroundColor Gray
+            
+            # Remove existing file to create symlink
+            Remove-Item -Path $targetSettings -Force
+        }
+        
+        # Create symbolic link
+        try {
+            # Need to run as admin for symlinks, so try hard link first
+            New-Item -ItemType HardLink -Path $targetSettings -Target $sourceSettings -Force | Out-Null
+            Write-Host "  ✅ Created hard link to settings.json" -ForegroundColor Green
+            $configured = $true
+        } catch {
+            # Fall back to copying if hard link fails
+            Copy-Item -Path $sourceSettings -Destination $targetSettings -Force
+            Write-Host "  ✅ Copied settings.json (hard link requires admin)" -ForegroundColor Yellow
+            $configured = $true
+        }
+    }
+}
+
+if (-not $configured) {
     Write-Warning "Windows Terminal not found. Install it from Microsoft Store for the best experience."
+    Write-Host "Your settings are available at: $sourceSettings" -ForegroundColor Cyan
 }
 
 # Configure PowerShell profile for Starship

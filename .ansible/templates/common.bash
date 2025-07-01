@@ -3,7 +3,9 @@
 
 # Add paths if not already present
 for p in {{ path_entries | join(' ') }}; do
-    p=$(eval echo $p)  # Expand variables like $HOME
+    # Safe variable expansion without eval
+    p="${p/#\~/$HOME}"     # Replace ~ with $HOME
+    p="${p/#\$HOME/$HOME}" # Expand $HOME variable
     [[ ":$PATH:" != *":$p:"* ]] && PATH="$p:$PATH"
 done
 export PATH
