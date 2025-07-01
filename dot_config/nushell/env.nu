@@ -3,3 +3,8 @@
 
 # Source Ansible-managed environment
 source-env ~/.config/ansible_generated/common.nu
+
+# Starship prompt initialization
+# This needs to be in env.nu for proper setup
+mkdir ~/.cache/starship
+starship init nu | save -f ~/.cache/starship/init.nu

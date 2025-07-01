@@ -15,23 +15,9 @@ $env.config = {
 }
 
 # Initialize Starship prompt
-if ((which starship | length) > 0) {
-    let starship_path = ($nu.data-dir | path join "vendor/autoload/starship.nu")
-    let vendor_dir = ($nu.data-dir | path join "vendor/autoload")
-    
-    # Create vendor autoload directory if it doesn't exist
-    if not ($vendor_dir | path exists) {
-        mkdir $vendor_dir
-    }
-    
-    # Generate starship init file if it doesn't exist
-    if not ($starship_path | path exists) {
-        starship init nu | save -f $starship_path
-    }
-    
-    # Source it
-    source $starship_path
-}
+# Note: In Nushell, we need to use the starship integration differently
+# See: https://starship.rs/guide/#nushell
+use ~/.cache/starship/init.nu
 
 # Common aliases
 alias ll = ls -la
