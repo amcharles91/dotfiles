@@ -1,16 +1,10 @@
 {{- if ne .chezmoi.os "windows" -}}
-#!/bin/bash
-# ~/.bashrc - Bash configuration
-
-# Source global definitions (Debian/Ubuntu)
-if [ -f /etc/bash.bashrc ]; then
-    . /etc/bash.bashrc
-fi
+# Fish shell configuration
 
 # Source Ansible-managed environment
-if [ -f "$HOME/.config/ansible_generated/common.bash" ]; then
-    . "$HOME/.config/ansible_generated/common.bash"
-fi
+if test -f $HOME/.config/ansible_generated/common.fish
+    source $HOME/.config/ansible_generated/common.fish
+end
 
 # Common aliases
 alias ll='ls -alF'
@@ -34,12 +28,7 @@ alias cp='cp -i'
 alias mv='mv -i'
 
 # Custom functions
-mkcd() {
-    mkdir -p "$1" && cd "$1"
-}
-
-# Source local overrides if they exist
-if [ -f "$HOME/.bashrc.local" ]; then
-    . "$HOME/.bashrc.local"
-fi
+function mkcd
+    mkdir -p $argv[1] && cd $argv[1]
+end
 {{- end -}}

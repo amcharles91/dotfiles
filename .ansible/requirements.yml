@@ -1,0 +1,4 @@
+---
+# Ansible Galaxy requirements
+roles: []
+  # No external roles needed - we'll install Rust directly

@@ -1,7 +1,7 @@
 # Cyberpunk + Knight Theme — Clean, Aligned Prompt
 
 format = """
-[╭─](#FDF500)【🛡 】[─](#FDF500)【$username$hostname】[─](#FDF500)【$directory】$git_branch$git_status$nodejs$python$rust$golang$java$c$cpp$dotnet$package$docker_context$memory_usage$cmd_duration[─](#FDF500)【$time】$status
+[╭─](#FDF500)【🛡 $env_var】[─](#FDF500)【$username$hostname】[─](#FDF500)【$directory】$git_branch$git_status$nodejs$python$rust$golang$java$c$cpp$dotnet$package$docker_context$memory_usage$cmd_duration[─](#FDF500)【$time】$status
 [╰─▶](#40FFE9)
 """
 
@@ -118,6 +118,12 @@ style = "bold #FF4444"
 [character]
 success_symbol = "[](#40FFE9)"
 error_symbol = "[](#FF4444)"
+
+# Shell indicator using environment variable
+[env_var]
+variable = "STARSHIP_SHELL"
+format = "[$env_value](bold #40FFE9)"
+default = "sh"
 
 # Optional Battery (Disabled)
 [battery]
