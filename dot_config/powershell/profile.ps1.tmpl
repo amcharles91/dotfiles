@@ -74,17 +74,7 @@ function touch {
     }
 }
 
-# Snap binary path
-{{- template "snap-path" . }}
-
-# Rust/Cargo setup (with optional installation)
-{{- template "rust-setup" . }}
-
-# Cargo tools status check
-{{- template "cargo-tools" . }}
-
-# fnm (Node version manager) setup
-{{- template "fnm-setup-powershell" . }}
+# Skip Linux-specific configurations on Windows
 
 # Platform specific settings
 {{- if eq .chezmoi.os "windows" }}
@@ -102,13 +92,6 @@ if (Test-Path($ChocolateyProfile)) {
 Set-Alias open xdg-open -ErrorAction SilentlyContinue
 {{- end }}
 
-# WSL specific settings
-{{- if .isWSL }}
-# WSL detected
-$env:BROWSER = "{{ .wsl.browser }}"
-function Open-InWindows { wslview $args }
-Set-Alias open Open-InWindows
-{{- end }}
 
 # Load local profile if it exists
 $LocalProfile = Join-Path (Split-Path $PROFILE) "profile.local.ps1"
