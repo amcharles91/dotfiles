@@ -47,6 +47,8 @@
         binary: fnm
       - name: eza
         binary: eza
+      - name: nu
+        binary: nu
 
   tasks:
     # System packages
@@ -69,41 +71,6 @@
         - { src: 'batcat', dest: 'bat' }
         - { src: 'fdfind', dest: 'fd' }
       ignore_errors: yes
-
-    # Nushell installation (not in default repos)
-    - name: Check if nushell is installed
-      command: which nu
-      register: nu_check
-      failed_when: false
-      changed_when: false
-
-    - name: Install nushell from GitHub releases
-      when: nu_check.rc != 0
-      block:
-        - name: Get latest nushell version
-          uri:
-            url: https://api.github.com/repos/nushell/nushell/releases/latest
-            return_content: yes
-          register: nu_release
-
-        - name: Set nushell version
-          set_fact:
-            nu_version: "{{ nu_release.json.tag_name }}"
-
-        - name: Download and install nushell
-          unarchive:
-            src: "https://github.com/nushell/nushell/releases/download/{{ nu_version }}/nu-{{ nu_version }}-x86_64-unknown-linux-musl.tar.gz"
-            dest: "/tmp"
-            remote_src: yes
-            creates: "/tmp/nu-{{ nu_version }}-x86_64-unknown-linux-musl/nu"
-
-        - name: Install nushell binary
-          become: yes
-          copy:
-            src: "/tmp/nu-{{ nu_version }}-x86_64-unknown-linux-musl/nu"
-            dest: "/usr/local/bin/nu"
-            mode: '0755'
-            remote_src: yes
 
     # Rust installation
     - name: Install Rust
