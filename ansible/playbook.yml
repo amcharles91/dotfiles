@@ -73,9 +73,18 @@
       ignore_errors: yes
 
     # Rust installation
-    - name: Install Rust
-      include_role:
-        name: gantsign.rust
+    - name: Check if Rust is installed
+      command: which cargo
+      register: cargo_check
+      failed_when: false
+      changed_when: false
+
+    - name: Install Rust via rustup
+      when: cargo_check.rc != 0
+      shell: |
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      args:
+        creates: "{{ ansible_env.HOME }}/.cargo/bin/cargo"
 
     # Cargo tools installation
     - name: Install cargo tools
