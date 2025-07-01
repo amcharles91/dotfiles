@@ -34,7 +34,7 @@ For Windows-native shells and terminal setup:
 
 ```powershell
 # Run the Windows setup script
-.\windows\setup.ps1
+.\.windows\setup.ps1
 ```
 
 This installs:
@@ -86,7 +86,7 @@ chezmoi update
 ├── .chezmoiscripts/        # Chezmoi hooks
 │   ├── run_once_01-install-ansible.sh
 │   └── run_after_02-ansible-playbook.sh
-├── ansible/                # Ansible configuration
+├── .ansible/               # Ansible configuration (hidden)
 │   ├── playbook.yml        # Main playbook
 │   ├── requirements.yml    # Galaxy dependencies
 │   └── templates/          # Shell configurations
@@ -95,7 +95,7 @@ chezmoi update
 │   ├── nushell/
 │   └── starship.toml
 ├── dot_bashrc              # Bash configuration
-└── windows/                # Windows setup
+└── .windows/               # Windows setup (hidden)
     └── setup.ps1
 ```
 
@@ -111,6 +111,6 @@ chezmoi apply
 ### Manual Ansible run
 
 ```bash
-cd ~/.local/share/chezmoi/ansible
+cd ~/.local/share/chezmoi/.ansible
 ansible-playbook -i inventory.ini playbook.yml --ask-become-pass
 ```

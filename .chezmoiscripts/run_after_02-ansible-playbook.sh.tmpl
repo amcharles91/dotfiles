@@ -2,7 +2,7 @@
 # Run after: Always run the Ansible playbook
 set -euo pipefail
 
-cd "{{ .chezmoi.sourceDir }}/ansible"
+cd "{{ .chezmoi.sourceDir }}/.ansible"
 
 echo "📦 Installing Galaxy requirements..."
 ansible-galaxy install -r requirements.yml --force
