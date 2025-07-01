@@ -16,6 +16,8 @@
     # APT packages to install
     apt_packages:
       - build-essential
+      - pkg-config
+      - libssl-dev
       - curl
       - wget
       - git
@@ -38,8 +40,6 @@
         binary: starship
       - name: cargo-binstall
         binary: cargo-binstall
-      - name: cargo-update
-        binary: cargo-install-update
     
     # Additional cargo tools to install via binstall
     cargo_binstall_tools:
@@ -49,6 +49,8 @@
         binary: eza
       - name: nu
         binary: nu
+      - name: cargo-update
+        binary: cargo-install-update
 
   tasks:
     # System packages
