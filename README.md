@@ -52,18 +52,38 @@ This will:
 
 ### Windows
 
-For Windows-native shells and terminal setup:
+#### Prerequisites
+- Windows 10/11 with winget (Windows Package Manager)
+- PowerShell Core (pwsh)
 
+#### Installation
+
+1. **Install PowerShell Core and Chezmoi** (in Windows PowerShell or Command Prompt):
 ```powershell
-# Run the Windows setup script
-.\.windows\setup.ps1
+# Install PowerShell Core
+winget install --id Microsoft.PowerShell --source winget
+
+# Install Chezmoi
+winget install twpayne.chezmoi
 ```
 
-This installs:
-- Fish shell
-- Nushell
-- Starship prompt
-- JetBrainsMono Nerd Font
+2. **Initialize and apply dotfiles** (in PowerShell Core):
+```powershell
+# Open PowerShell Core
+pwsh
+
+# Initialize and apply in one command
+chezmoi init --apply <your-github-username>
+```
+
+This will automatically:
+- Install Nushell and Starship prompt
+- Install JetBrainsMono Nerd Font
+- Configure Windows Terminal
+- Install development tools and packages
+- Set up your shells with proper PATH management
+
+**Note**: Some installations may require administrator privileges. If prompted, allow the installations to proceed.
 
 ## What's Included
 
@@ -106,8 +126,12 @@ chezmoi update
 .
 ├── .chezmoi.toml           # User configuration
 ├── .chezmoiscripts/        # Chezmoi hooks
-│   ├── run_once_01-install-ansible.sh
-│   └── run_after_02-ansible-playbook.sh
+│   ├── run_once_00-windows-check-pwsh.ps1.tmpl  # Windows: PowerShell Core check
+│   ├── run_once_01-install-ansible.sh           # Linux/WSL: Ansible installer
+│   ├── run_once_01-windows-initial-setup.ps1.tmpl # Windows: Initial setup
+│   ├── run_after_02-ansible-playbook.sh         # Linux/WSL: Run Ansible
+│   ├── run_onchange_02-windows-packages.ps1.tmpl # Windows: Package installer
+│   └── run_after_03-windows-config.ps1.tmpl     # Windows: Post-config
 ├── .ansible/               # Ansible configuration (hidden)
 │   ├── playbook.yml        # Main playbook
 │   ├── requirements.yml    # Galaxy dependencies
@@ -117,8 +141,9 @@ chezmoi update
 │   ├── nushell/
 │   └── starship.toml
 ├── dot_bashrc              # Bash configuration
-└── .windows/               # Windows setup (hidden)
-    └── setup.ps1
+└── .windows/               # Windows-specific resources (hidden)
+    ├── setup.ps1           # Manual setup script (legacy)
+    └── windows-terminal/   # Windows Terminal configuration
 ```
 
 ## Shell Configuration
