@@ -78,10 +78,11 @@ if (Get-Command fnm -ErrorAction SilentlyContinue) {
                 $nuFnmInit = @"
 
 # Initialize fnm (workaround for Nushell)
+# Load fnm environment variables
 load-env (fnm env --shell bash | lines | str replace 'export ' '' | str replace -a '"' '' | split column "=" | rename name value | where name != "FNM_ARCH" and name != "PATH" | reduce -f {} {|it, acc| `$acc | upsert `$it.name `$it.value })
 
-# Update PATH with FNM_MULTISHELL_PATH
-`$env.PATH = (`$env.PATH | split row (char esep) | prepend `$"(`$env.FNM_MULTISHELL_PATH)/bin")
+# Update PATH with FNM_MULTISHELL_PATH - Windows doesn't need /bin suffix
+`$env.PATH = (`$env.PATH | split row (char esep) | prepend `$env.FNM_MULTISHELL_PATH | str join (char esep))
 "@
                 Add-Content -Path $nuConfigPath -Value $nuFnmInit
                 Write-Host "✅ Added fnm to Nushell env.nu (using workaround)" -ForegroundColor Green
