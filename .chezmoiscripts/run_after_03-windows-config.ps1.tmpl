@@ -111,6 +111,52 @@ load-env (fnm env --shell bash | lines | str replace 'export ' '' | str replace 
     }
 }
 
+# Configure Windows Terminal
+Write-Host "`n⚙️  Configuring Windows Terminal..." -ForegroundColor Yellow
+
+# Source settings location in chezmoi directory
+$sourceSettings = Join-Path "{{ .chezmoi.sourceDir }}" "windows-terminal\settings.json"
+
+if (Test-Path $sourceSettings) {
+    # Check for Windows Terminal installations
+    $wtPackages = @(
+        @{
+            Name = "Windows Terminal"
+            Path = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState"
+        },
+        @{
+            Name = "Windows Terminal Preview"
+            Path = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminalPreview_8wekyb3d8bbwe\LocalState"
+        }
+    )
+    
+    $configured = $false
+    foreach ($wt in $wtPackages) {
+        if (Test-Path $wt.Path) {
+            Write-Host "Found $($wt.Name)" -ForegroundColor Cyan
+            $targetSettings = Join-Path $wt.Path "settings.json"
+            
+            # Backup existing settings if present
+            if (Test-Path $targetSettings) {
+                $backupPath = Join-Path $wt.Path "settings.backup.json"
+                Copy-Item -Path $targetSettings -Destination $backupPath -Force
+                Write-Host "  Backed up existing settings to: settings.backup.json" -ForegroundColor Gray
+            }
+            
+            # Copy settings
+            Copy-Item -Path $sourceSettings -Destination $targetSettings -Force
+            Write-Host "  ✅ Applied Windows Terminal settings" -ForegroundColor Green
+            $configured = $true
+        }
+    }
+    
+    if (-not $configured) {
+        Write-Warning "Windows Terminal not found. Settings are available at: $sourceSettings"
+    }
+} else {
+    Write-Warning "Windows Terminal settings.json not found in chezmoi source"
+}
+
 # Show summary
 Write-Host "`n📊 Configuration Summary" -ForegroundColor Cyan
 Write-Host "========================" -ForegroundColor Cyan
