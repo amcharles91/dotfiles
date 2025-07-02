@@ -90,18 +90,8 @@ load-env (fnm env --shell bash | lines | str replace 'export ' '' | str replace 
         }
     }
     
-    # Fish configuration
-    if (Get-Command fish -ErrorAction SilentlyContinue) {
-        $fishConfigDir = "$env:USERPROFILE\.config\fish"
-        $fishConfigPath = "$fishConfigDir\config.fish"
-        if (Test-Path $fishConfigPath) {
-            $fishContent = Get-Content $fishConfigPath -Raw
-            if ($fishContent -notmatch "fnm env") {
-                Add-Content -Path $fishConfigPath -Value "`n# Initialize fnm`nfnm env --use-on-cd --shell fish | source"
-                Write-Host "✅ Added fnm to Fish config" -ForegroundColor Green
-            }
-        }
-    }
+    # Fish configuration - skip on Windows (not available via winget)
+    # Fish can be installed via WSL or MSYS2 if needed
     
     # Install Node.js LTS if not already installed
     Write-Host "📦 Setting up Node.js via fnm..." -ForegroundColor Yellow
