@@ -53,7 +53,7 @@ if (Get-Command starship -ErrorAction SilentlyContinue) {
 if (Get-Command fnm -ErrorAction SilentlyContinue) {
     Write-Host "`n📦 Configuring fnm..." -ForegroundColor Yellow
     
-    # Ensure profile exists
+    # PowerShell configuration
     if (-not (Test-Path $PROFILE)) {
         $profileDir = Split-Path -Parent $PROFILE
         if (-not (Test-Path $profileDir)) {
@@ -62,18 +62,61 @@ if (Get-Command fnm -ErrorAction SilentlyContinue) {
         Set-Content -Path $PROFILE -Value ""
     }
     
-    # Check if fnm is already in profile
     $profileContent = Get-Content $PROFILE -Raw
     if ($profileContent -notmatch "fnm env") {
         Add-Content -Path $PROFILE -Value "`n# Initialize fnm`nfnm env --use-on-cd | Out-String | Invoke-Expression"
         Write-Host "✅ Added fnm to PowerShell profile" -ForegroundColor Green
-        
-        # Install latest Node.js
-        Write-Host "📦 Installing latest Node.js via fnm..." -ForegroundColor Yellow
+    }
+    
+    # Nushell configuration
+    if (Get-Command nu -ErrorAction SilentlyContinue) {
+        $nuConfigPath = "$env:APPDATA\nushell\env.nu"
+        if (Test-Path $nuConfigPath) {
+            $nuContent = Get-Content $nuConfigPath -Raw
+            if ($nuContent -notmatch "fnm env") {
+                # Nushell doesn't have official fnm support, so we use a workaround
+                $nuFnmInit = @"
+
+# Initialize fnm (workaround for Nushell)
+load-env (fnm env --shell bash | lines | str replace 'export ' '' | str replace -a '"' '' | split column "=" | rename name value | where name != "FNM_ARCH" and name != "PATH" | reduce -f {} {|it, acc| `$acc | upsert `$it.name `$it.value })
+
+# Update PATH with FNM_MULTISHELL_PATH
+`$env.PATH = (`$env.PATH | split row (char esep) | prepend `$"(`$env.FNM_MULTISHELL_PATH)/bin")
+"@
+                Add-Content -Path $nuConfigPath -Value $nuFnmInit
+                Write-Host "✅ Added fnm to Nushell env.nu (using workaround)" -ForegroundColor Green
+            }
+        }
+    }
+    
+    # Fish configuration
+    if (Get-Command fish -ErrorAction SilentlyContinue) {
+        $fishConfigDir = "$env:USERPROFILE\.config\fish"
+        $fishConfigPath = "$fishConfigDir\config.fish"
+        if (Test-Path $fishConfigPath) {
+            $fishContent = Get-Content $fishConfigPath -Raw
+            if ($fishContent -notmatch "fnm env") {
+                Add-Content -Path $fishConfigPath -Value "`n# Initialize fnm`nfnm env --use-on-cd --shell fish | source"
+                Write-Host "✅ Added fnm to Fish config" -ForegroundColor Green
+            }
+        }
+    }
+    
+    # Install Node.js LTS if not already installed
+    Write-Host "📦 Setting up Node.js via fnm..." -ForegroundColor Yellow
+    # Load fnm environment in current session
+    fnm env --use-on-cd | Out-String | Invoke-Expression
+    
+    # Check if any Node version is installed
+    $nodeVersions = fnm list 2>$null
+    if (-not $nodeVersions) {
+        Write-Host "Installing Node.js LTS..." -ForegroundColor Cyan
         fnm install --lts
         fnm use lts-latest
         fnm default lts-latest
         Write-Host "✅ Installed Node.js LTS" -ForegroundColor Green
+    } else {
+        Write-Host "✅ Node.js already installed via fnm" -ForegroundColor Green
     }
 }
 
