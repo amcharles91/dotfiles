@@ -1,0 +1,10 @@
+[data]
+    name = "{{ .name }}"
+    email = "{{ .email }}"
+    githubUser = "{{ .githubUser }}"
+    editor = "{{ .editor }}"
+    defaultShell = "{{ .defaultShell }}"
+
+[interpreters.ps1]
+    command = "pwsh"
+    args = ["-NoLogo"]

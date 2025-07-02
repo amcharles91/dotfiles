@@ -54,6 +54,10 @@
         binary: nu
       - name: cargo-update
         binary: cargo-install-update
+      - name: tokei
+        binary: tokei
+      - name: bottom
+        binary: btm
 
   tasks:
     # System packages
