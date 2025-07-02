@@ -1,0 +1,104 @@
+{{ if eq .chezmoi.os "windows" -}}
+#!/usr/bin/env pwsh
+# Windows Initial Setup - Runs once to prepare the system
+
+Write-Host "`n🚀 Windows Initial Setup" -ForegroundColor Cyan
+Write-Host "=======================" -ForegroundColor Cyan
+
+# Check if running as Administrator
+$isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
+if (-not $isAdmin) {
+    Write-Warning "Some installations may require administrator privileges"
+}
+
+# Check for winget
+Write-Host "`n📦 Checking for winget..." -ForegroundColor Yellow
+try {
+    $wingetVersion = winget --version
+    Write-Host "✅ winget is installed: $wingetVersion" -ForegroundColor Green
+} catch {
+    Write-Error "❌ winget is not installed!"
+    Write-Host "Please install App Installer from Microsoft Store:" -ForegroundColor Yellow
+    Write-Host "https://www.microsoft.com/store/productId/9NBLGGH4NNS1" -ForegroundColor Cyan
+    exit 1
+}
+
+# Check for PowerShell 7
+Write-Host "`n📦 Checking for PowerShell 7..." -ForegroundColor Yellow
+if (Get-Command pwsh -ErrorAction SilentlyContinue) {
+    $pwshVersion = pwsh --version
+    Write-Host "✅ PowerShell 7 is installed: $pwshVersion" -ForegroundColor Green
+} else {
+    Write-Host "⚠️  PowerShell 7 not found, installing..." -ForegroundColor Yellow
+    winget install --id Microsoft.PowerShell -e --accept-package-agreements --accept-source-agreements
+    
+    # Check if installation succeeded
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warning "Failed to install PowerShell 7. Scripts will run with PowerShell 5.1"
+        Write-Host "To install manually: winget install Microsoft.PowerShell" -ForegroundColor Cyan
+    }
+}
+
+# Install essential shells and prompt
+Write-Host "`n🐚 Installing shells and Starship..." -ForegroundColor Yellow
+
+# Starship prompt
+if (-not (Get-Command starship -ErrorAction SilentlyContinue)) {
+    Write-Host "Installing Starship..." -ForegroundColor Cyan
+    winget install --id Starship.Starship -e --accept-package-agreements --accept-source-agreements
+} else {
+    Write-Host "✅ Starship already installed" -ForegroundColor Green
+}
+
+# Fish shell
+if (-not (Get-Command fish -ErrorAction SilentlyContinue)) {
+    Write-Host "Installing Fish shell..." -ForegroundColor Cyan
+    winget install --id Fisherman.Fish -e --accept-package-agreements --accept-source-agreements
+} else {
+    Write-Host "✅ Fish already installed" -ForegroundColor Green
+}
+
+# Nushell
+if (-not (Get-Command nu -ErrorAction SilentlyContinue)) {
+    Write-Host "Installing Nushell..." -ForegroundColor Cyan
+    winget install --id Nushell.Nushell -e --accept-package-agreements --accept-source-agreements
+} else {
+    Write-Host "✅ Nushell already installed" -ForegroundColor Green
+}
+
+# Install JetBrainsMono Nerd Font
+Write-Host "`n🔤 Installing JetBrainsMono Nerd Font..." -ForegroundColor Yellow
+try {
+    # Check if Scoop is available for easier font installation
+    if (Get-Command scoop -ErrorAction SilentlyContinue) {
+        if (-not (scoop list | Select-String "JetBrainsMono-NF")) {
+            scoop bucket add nerd-fonts
+            scoop install JetBrainsMono-NF
+            Write-Host "✅ JetBrainsMono Nerd Font installed via Scoop" -ForegroundColor Green
+        } else {
+            Write-Host "✅ JetBrainsMono Nerd Font already installed" -ForegroundColor Green
+        }
+    } else {
+        Write-Host "⚠️  Scoop not found, skipping font installation" -ForegroundColor Yellow
+        Write-Host "   Install manually from: https://www.nerdfonts.com/font-downloads" -ForegroundColor Cyan
+    }
+} catch {
+    Write-Warning "Failed to install font: $_"
+}
+
+# Create common directories
+Write-Host "`n📁 Creating common directories..." -ForegroundColor Yellow
+$directories = @(
+    "$env:USERPROFILE\.config",
+    "$env:USERPROFILE\.local\bin"
+)
+
+foreach ($dir in $directories) {
+    if (-not (Test-Path $dir)) {
+        New-Item -ItemType Directory -Path $dir -Force | Out-Null
+        Write-Host "✅ Created: $dir" -ForegroundColor Green
+    }
+}
+
+Write-Host "`n✨ Initial setup complete!" -ForegroundColor Green
+{{ end -}}

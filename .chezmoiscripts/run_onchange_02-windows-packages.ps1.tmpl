@@ -1,0 +1,77 @@
+{{ if eq .chezmoi.os "windows" -}}
+#!/usr/bin/env pwsh
+# Windows Package Installation - Runs when package list changes
+# Hash: {{ include "dot_config/chezmoi/windows-packages.txt" | sha256sum }}
+
+Write-Host "`n📦 Installing Windows Packages" -ForegroundColor Cyan
+Write-Host "==============================" -ForegroundColor Cyan
+
+# Define packages to install
+$packages = @(
+    # Core Development
+    @{ID = "Microsoft.VisualStudioCode"; Name = "Visual Studio Code"},
+    @{ID = "JetBrains.Toolbox"; Name = "JetBrains Toolbox"},
+    @{ID = "Microsoft.PowerToys"; Name = "PowerToys"},
+    @{ID = "Microsoft.WindowsTerminal"; Name = "Windows Terminal"},
+    @{ID = "Git.Git"; Name = "Git"},
+    @{ID = "TortoiseGit.TortoiseGit"; Name = "TortoiseGit"},
+    
+    # Languages
+    @{ID = "Rustlang.Rust.MSVC"; Name = "Rust (MSVC)"},
+    @{ID = "Python.Python.3.12"; Name = "Python 3.12"},
+    @{ID = "GoLang.Go"; Name = "Go"},
+    @{ID = "Microsoft.DotNet.SDK.8"; Name = ".NET SDK 8"},
+    
+    # CLI Tools
+    @{ID = "BurntSushi.ripgrep.MSVC"; Name = "ripgrep"},
+    @{ID = "sharkdp.fd"; Name = "fd"},
+    @{ID = "junegunn.fzf"; Name = "fzf"},
+    @{ID = "gerardog.gsudo"; Name = "gsudo"},
+    
+    # Productivity
+    @{ID = "7zip.7zip"; Name = "7-Zip"},
+    @{ID = "voidtools.Everything"; Name = "Everything"},
+    @{ID = "DevToys-app.DevToys"; Name = "DevToys"},
+    @{ID = "Microsoft.Sysinternals.ProcessExplorer"; Name = "Process Explorer"},
+    @{ID = "Files-Community.Files"; Name = "Files"},
+    @{ID = "RevoUninstaller.RevoUninstaller"; Name = "Revo Uninstaller"},
+    
+    # Applications
+    @{ID = "AgileBits.1Password"; Name = "1Password"},
+    @{ID = "Discord.Discord"; Name = "Discord"},
+    @{ID = "Brave.Brave"; Name = "Brave Browser"},
+    @{ID = "REALiX.HWiNFO"; Name = "HWiNFO"},
+    @{ID = "TechPowerUp.GPU-Z"; Name = "GPU-Z"},
+    @{ID = "Valve.Steam"; Name = "Steam"},
+    
+    # Game Development
+    @{ID = "Microsoft.VisualStudio.2022.Community"; Name = "Visual Studio 2022 Community"},
+    @{ID = "EpicGames.EpicGamesLauncher"; Name = "Epic Games Launcher"},
+    @{ID = "Kitware.CMake"; Name = "CMake"}
+)
+
+# Install packages
+$totalPackages = $packages.Count
+$currentPackage = 0
+
+foreach ($package in $packages) {
+    $currentPackage++
+    Write-Host "`n[$currentPackage/$totalPackages] Installing $($package.Name)..." -ForegroundColor Yellow
+    
+    # Check if already installed
+    $installed = winget list --id $package.ID --exact 2>$null | Select-String $package.ID
+    
+    if ($installed) {
+        Write-Host "  ✅ Already installed" -ForegroundColor Green
+    } else {
+        try {
+            winget install --id $package.ID -e --silent --accept-package-agreements --accept-source-agreements
+            Write-Host "  ✅ Installed successfully" -ForegroundColor Green
+        } catch {
+            Write-Warning "  ❌ Failed to install $($package.Name)"
+        }
+    }
+}
+
+Write-Host "`n✨ Package installation complete!" -ForegroundColor Green
+{{ end -}}

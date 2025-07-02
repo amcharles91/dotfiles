@@ -1,6 +1,0 @@
-# Custom PATH entries
-# Add one path per line, these will be preserved across chezmoi apply
-# Lines starting with # are comments
-# Example:
-# /home/andre/custom/bin
-# /opt/myapp/bin

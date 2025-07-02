@@ -1,0 +1,44 @@
+# Windows Package List
+# This file is used to trigger reinstallation when package list changes
+# Edit the run_onchange_02-windows-packages.ps1.tmpl file to add/remove packages
+
+Core Development:
+- Microsoft.VisualStudioCode
+- JetBrains.Toolbox
+- Microsoft.PowerToys
+- Microsoft.WindowsTerminal
+- Git.Git
+- TortoiseGit.TortoiseGit
+
+Languages:
+- Rustlang.Rust.MSVC
+- Python.Python.3.12
+- GoLang.Go
+- Microsoft.DotNet.SDK.8
+
+CLI Tools:
+- BurntSushi.ripgrep.MSVC
+- sharkdp.fd
+- junegunn.fzf
+- gerardog.gsudo
+
+Productivity:
+- 7zip.7zip
+- voidtools.Everything
+- DevToys-app.DevToys
+- Microsoft.Sysinternals.ProcessExplorer
+- Files-Community.Files
+- RevoUninstaller.RevoUninstaller
+
+Applications:
+- AgileBits.1Password
+- Discord.Discord
+- Brave.Brave
+- REALiX.HWiNFO
+- TechPowerUp.GPU-Z
+- Valve.Steam
+
+Game Development:
+- Microsoft.VisualStudio.2022.Community
+- EpicGames.EpicGamesLauncher
+- Kitware.CMake
