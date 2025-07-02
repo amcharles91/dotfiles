@@ -1,14 +1,10 @@
 # This file is managed by Ansible. DO NOT EDIT.
 # Source this file in your config.fish
 
-# Ensure system paths are included
-if test -d /snap/bin
-    fish_add_path -a /snap/bin
-end
-
-# Add paths
+# Add custom paths using fish's built-in path management
+# fish_add_path handles existence checking and deduplication automatically
 {% for path in path_entries %}
-fish_add_path -p {{ path }}
+fish_add_path --prepend --path {{ path }}
 {% endfor %}
 
 # Rust/Cargo

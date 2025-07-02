@@ -1,28 +1,30 @@
 # This file is managed by Ansible. DO NOT EDIT.
 # Source this file in your env.nu
 
-# Add paths to PATH
-# First, ensure we have a base PATH if it's missing or minimal
-if (($env.PATH? | default "") == "") or (($env.PATH | split row (char esep) | length) < 5) {
-    # Use system's default PATH from /etc/environment if available
-    let system_path = if ("/etc/environment" | path exists) {
-        open /etc/environment | lines | where { |line| $line | str starts-with "PATH=" } | first | default "" | str replace 'PATH="' '' | str replace '"' ''
-    } else {
-        "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-    }
-    $env.PATH = $system_path
-}
-
-# Now prepend our custom paths
-$env.PATH = ($env.PATH | split row (char esep) | 
+# Define custom paths to add
+let custom_paths = [
 {% for path in path_entries %}
 {% if '$HOME' in path %}
-    prepend $"($env.HOME){{ path.replace('$HOME', '') }}" |
+    $"($env.HOME){{ path.replace('$HOME', '') }}",
 {% else %}
-    prepend "{{ path }}" |
+    "{{ path }}",
 {% endif %}
 {% endfor %}
-    uniq | str join (char esep))
+]
+
+# Ensure PATH exists as a string (Nushell may start with PATH as list or missing)
+let current_path = if ("PATH" in $env) {
+    if ($env.PATH | describe) == "string" {
+        $env.PATH | split row (char esep)
+    } else {
+        $env.PATH
+    }
+} else {
+    []
+}
+
+# Prepend custom paths and remove duplicates
+$env.PATH = ($custom_paths | append $current_path | uniq | str join (char esep))
 
 # Rust/Cargo
 $env.CARGO_HOME = $"($env.HOME)/.cargo"

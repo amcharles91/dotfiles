@@ -1,19 +1,27 @@
 # This file is managed by Ansible. DO NOT EDIT.
 # Source this file in your .bashrc
 
-# Ensure we have system paths included
-# Check if /snap/bin exists and is not in PATH
-if [[ -d "/snap/bin" ]] && [[ ":$PATH:" != *":/snap/bin:"* ]]; then
-    PATH="$PATH:/snap/bin"
-fi
+# Prepend a path to PATH, but only if it exists and is not already in PATH
+prepend_path() {
+    # Return if the path is not a directory
+    [ -d "$1" ] || return
+    
+    # Return if the path is already in PATH
+    case ":$PATH:" in
+        *":$1:"*) return;;
+    esac
+    
+    # Prepend the path
+    PATH="$1${PATH:+":$PATH"}"
+}
 
-# Add paths if not already present
-for p in {{ path_entries | join(' ') }}; do
-    # Safe variable expansion without eval
-    p="${p/#\~/$HOME}"     # Replace ~ with $HOME
-    p="${p/#\$HOME/$HOME}" # Expand $HOME variable
-    [[ ":$PATH:" != *":$p:"* ]] && PATH="$p:$PATH"
-done
+# Add custom paths
+{% for path in path_entries %}
+prepend_path "{{ path | replace('$HOME', '$HOME') }}"
+{% endfor %}
+
+# Clean up the helper function
+unset -f prepend_path
 export PATH
 
 # Rust/Cargo
