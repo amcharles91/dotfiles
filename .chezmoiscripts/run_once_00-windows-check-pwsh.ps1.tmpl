@@ -1,0 +1,32 @@
+{{ if eq .chezmoi.os "windows" -}}
+#!/usr/bin/env powershell
+# Windows PowerShell Core Check - Ensures pwsh is available before running other scripts
+
+Write-Host "`nChecking for PowerShell Core (pwsh)..." -ForegroundColor Yellow
+
+# Check if pwsh is available
+try {
+    $pwshPath = (Get-Command pwsh -ErrorAction Stop).Path
+    Write-Host "PowerShell Core found at: $pwshPath" -ForegroundColor Green
+    exit 0
+} catch {
+    Write-Host ""
+    Write-Host "==================================================================" -ForegroundColor Red
+    Write-Host "  PowerShell Core (pwsh) is required but not found!" -ForegroundColor Red
+    Write-Host "==================================================================" -ForegroundColor Red
+    Write-Host ""
+    Write-Host "Please install PowerShell Core before running chezmoi." -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "Option 1: Install via winget (recommended):" -ForegroundColor Cyan
+    Write-Host "  winget install --id Microsoft.PowerShell --source winget" -ForegroundColor White
+    Write-Host ""
+    Write-Host "Option 2: Download from GitHub:" -ForegroundColor Cyan
+    Write-Host "  https://github.com/PowerShell/PowerShell/releases" -ForegroundColor White
+    Write-Host ""
+    Write-Host "After installation, run 'chezmoi apply' again." -ForegroundColor Yellow
+    Write-Host ""
+    
+    # Exit with error code to stop chezmoi
+    exit 1
+}
+{{ end -}}
