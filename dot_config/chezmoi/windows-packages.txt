@@ -11,7 +11,7 @@ Core Development:
 - TortoiseGit.TortoiseGit
 
 Languages:
-- Rustlang.Rust.MSVC
+- Rustlang.Rustup
 - Python.Python.3.12
 - GoLang.Go
 - Microsoft.DotNet.SDK.8
