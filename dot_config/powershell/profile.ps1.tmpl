@@ -31,6 +31,11 @@ if (Get-Command starship -ErrorAction SilentlyContinue) {
     Write-Warning "Starship not found. Run 'chezmoi apply' to install."
 }
 
+# Initialize fnm (Fast Node Manager)
+if (Get-Command fnm -ErrorAction SilentlyContinue) {
+    fnm env --use-on-cd | Out-String | Invoke-Expression
+}
+
 # PSReadLine configuration
 if (Get-Module -ListAvailable -Name PSReadLine) {
     Set-PSReadLineOption -EditMode Emacs
