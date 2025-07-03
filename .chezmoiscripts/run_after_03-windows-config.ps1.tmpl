@@ -16,7 +16,7 @@ if (Get-Command cargo -ErrorAction SilentlyContinue) {
     }
     
     # Install other tools via cargo-binstall
-    $cargoTools = @("fnm", "eza", "tokei", "bottom", "cargo-install-update")
+    $cargoTools = @("eza", "tokei", "bottom", "cargo-update")
     foreach ($tool in $cargoTools) {
         if (-not (Get-Command $tool -ErrorAction SilentlyContinue)) {
             Write-Host "Installing $tool..." -ForegroundColor Cyan

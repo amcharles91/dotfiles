@@ -10,12 +10,19 @@ $PSDefaultParameterValues['*:Encoding'] = 'utf8'
 $ErrorActionPreference = 'Continue'
 $ErrorView = 'ConciseView'
 
-# Path configuration
+# Path configuration with deduplication
 {{- if eq .chezmoi.os "windows" }}
-$env:PATH = "$HOME\.local\bin;$HOME\bin;$env:PATH"
+$PathSeparator = ';'
+$NewPaths = @("$HOME\.local\bin", "$HOME\bin")
 {{- else }}
-$env:PATH = "$HOME/.local/bin:$HOME/bin:$env:PATH"
+$PathSeparator = ':'
+$NewPaths = @("$HOME/.local/bin", "$HOME/bin")
 {{- end }}
+
+# Add new paths to the beginning and remove duplicates
+$CurrentPaths = $env:PATH -split $PathSeparator
+$AllPaths = $NewPaths + $CurrentPaths | Select-Object -Unique
+$env:PATH = $AllPaths -join $PathSeparator
 
 # Initialize Starship prompt
 if (Get-Command starship -ErrorAction SilentlyContinue) {
