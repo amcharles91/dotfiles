@@ -79,9 +79,10 @@ chezmoi init --apply <your-github-username>
 This will automatically:
 - Install Nushell and Starship prompt
 - Install JetBrainsMono Nerd Font
-- Configure Windows Terminal
+- Configure Windows Terminal settings
 - Install development tools and packages
 - Set up your shells with proper PATH management
+- Enable Starship prompt in all shells (PowerShell, Nushell)
 
 **Note**: Some installations may require administrator privileges. If prompted, allow the installations to proceed.
 
@@ -141,9 +142,10 @@ chezmoi update
 │   ├── nushell/
 │   └── starship.toml
 ├── dot_bashrc              # Bash configuration
+├── AppData/                # Windows application data
+│   └── Local/Packages/     # Windows Terminal settings
 └── .windows/               # Windows-specific resources (hidden)
-    ├── setup.ps1           # Manual setup script (legacy)
-    └── windows-terminal/   # Windows Terminal configuration
+    └── setup.ps1           # Manual setup script (legacy)
 ```
 
 ## Shell Configuration
