@@ -1,5 +1,5 @@
-# Nushell Configuration File for Linux
-# ~/.config/nushell/config.nu
+# Nushell Configuration File for Windows
+# %APPDATA%\nushell\config.nu
 
 # Version check for compatibility
 let nu_version = (version | get version)
@@ -15,7 +15,8 @@ $env.config = {
 }
 
 # Initialize Starship prompt
-use ~/.cache/starship/init.nu
+mkdir ($nu.data-dir | path join "vendor/autoload")
+starship init nu | save -f ($nu.data-dir | path join "vendor/autoload/starship.nu")
 
 # Common aliases
 alias ll = ls -la

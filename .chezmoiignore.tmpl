@@ -59,12 +59,15 @@ scripts/
 dot_bashrc.tmpl
 dot_zshrc.tmpl
 dot_config/fish/
+dot_config/nushell/
 {{ else if eq .chezmoi.os "darwin" }}
 # macOS specific
 windows-terminal/
+AppData/
 {{ else }}
 # Linux specific
 windows-terminal/
+AppData/
 {{ end }}
 
 # Shell-specific exclusions based on availability
